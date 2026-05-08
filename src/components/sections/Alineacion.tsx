@@ -3,7 +3,7 @@ import { useFantasyStore } from '../../store/fantasyStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import { Card } from '../../../components/ui/card';
 import { Button } from '../../../components/ui/button';
-import { calcBestLineup, scoreColor } from '../../lib/scoring';
+import { calcBestLineup, enrichAllPlayers, scoreColor } from '../../lib/scoring';
 import { fmtValor, probColor, formaDisplay } from '../../lib/utils/fantasy';
 
 const FORMACIONES = ['4-3-3', '4-4-2', '3-5-2', '5-3-2', '3-4-3', '4-2-3-1'];
@@ -13,9 +13,14 @@ export function Alineacion() {
     const { settings } = useSettingsStore();
     const [formacion, setFormacion] = useState(settings.formacion);
 
+    const enriched = useMemo(() =>
+        enrichAllPlayers(miEquipo, plataformaActiva, settings),
+        [miEquipo, plataformaActiva, settings]
+    );
+
     const lineup = useMemo(() =>
-        calcBestLineup(miEquipo, plataformaActiva, formacion, settings),
-        [miEquipo, plataformaActiva, formacion, settings]
+        calcBestLineup(enriched, plataformaActiva, formacion, settings),
+        [enriched, plataformaActiva, formacion, settings]
     );
 
     const totalScore = lineup.titulares.reduce((s, p) => s + (p.scores?.general || 0), 0);

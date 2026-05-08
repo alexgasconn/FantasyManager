@@ -5,7 +5,7 @@ import { Input } from '../../components/ui/input';
 import { Card } from '../../components/ui/card';
 
 export function BiwengerLogin() {
-    const { setBiwengerAuth } = useFantasyStore();
+    const { setBiwengerAuth, setPlataforma } = useFantasyStore();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -55,6 +55,7 @@ export function BiwengerLogin() {
                     name: league.name,
                 },
             });
+            setPlataforma('biwenger');
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Error desconocido';
             setError(message);
