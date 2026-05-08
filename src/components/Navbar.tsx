@@ -1,13 +1,18 @@
 import { useState } from 'react';
 import { useFantasyStore } from '../store/fantasyStore';
 import { Button } from '../../components/ui/button';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, LogOut } from 'lucide-react';
 
 type Seccion = 'inicio' | 'miequipo' | 'formacion' | 'mercado' | 'predicciones' | 'scores' | 'rivales' | 'graficas' | 'jugadores';
 
 export function Navbar({ seccionActiva, setSeccioActiva }: { seccionActiva: Seccion; setSeccioActiva: (s: Seccion) => void }) {
-    const { plataformaActiva, setPlataforma, miEquipo } = useFantasyStore();
+    const { plataformaActiva, setPlataforma, miEquipo, setBiwengerAuth, biwengerAuth } = useFantasyStore();
     const [menuAbierto, setMenuAbierto] = useState(false);
+
+    const handleLogout = () => {
+      setBiwengerAuth(null);
+      localStorage.removeItem('biwenger_token');
+    };
 
     const secciones: { id: Seccion; label: string; icon: string }[] = [
         { id: 'inicio', label: 'Inicio', icon: '🏠' },
@@ -62,6 +67,16 @@ export function Navbar({ seccionActiva, setSeccioActiva }: { seccionActiva: Secc
                         </select>
                     </div>
 
+                    {/* Logout Button */}
+                    <Button
+                        onClick={handleLogout}
+                        variant="ghost"
+                        className="hidden md:flex items-center gap-2 text-white hover:bg-red-600"
+                    >
+                        <LogOut size={18} />
+                        Salir
+                    </Button>
+
                     {/* Mobile Menu Button */}
                     <button onClick={() => setMenuAbierto(!menuAbierto)} className="lg:hidden">
                         {menuAbierto ? <X size={24} /> : <Menu size={24} />}
@@ -98,6 +113,17 @@ export function Navbar({ seccionActiva, setSeccioActiva }: { seccionActiva: Secc
                                 <option value="futmondo">Futmondo</option>
                                 <option value="mister">Mister</option>
                             </select>
+                        </div>
+
+                        <div className="pt-2 border-t border-blue-500">
+                            <Button
+                                onClick={handleLogout}
+                                variant="ghost"
+                                className="w-full justify-start text-white hover:bg-red-600"
+                            >
+                                <LogOut size={18} />
+                                Salir
+                            </Button>
                         </div>
                     </div>
                 )}

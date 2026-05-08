@@ -2,7 +2,18 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { PlayerData, Plataforma } from '../types/fantasy';
 
+interface BiwengerAuth {
+  token: string;
+  user: { id: string; name: string };
+  league: { id: string; name: string };
+}
+
 interface FantasyStore {
+    // Biwenger Auth
+    biwengerAuth: BiwengerAuth | null;
+    setBiwengerAuth: (auth: BiwengerAuth | null) => void;
+    isBiwengerLoggedIn: () => boolean;
+
     // Mi equipo
     miEquipo: PlayerData[];
     addJugador: (player: PlayerData) => void;
@@ -35,12 +46,16 @@ interface FantasyStore {
 export const useFantasyStore = create<FantasyStore>()(
     persist(
         (set, get) => ({
+            biwengerAuth: null,
             miEquipo: [],
             plataformaActiva: 'laliga',
             equiposCache: {},
             presupuestoTotal: 100_000_000,
             equipoSeleccionado: 'barcelona',
             favoritos: [],
+
+            setBiwengerAuth: (auth) => set({ biwengerAuth: auth }),
+            isBiwengerLoggedIn: () => get().biwengerAuth !== null,
 
             addJugador: (player) =>
                 set(state => ({
