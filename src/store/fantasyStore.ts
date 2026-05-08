@@ -4,8 +4,8 @@ import { PlayerData, Plataforma } from '../types/fantasy';
 
 interface BiwengerAuth {
     token: string;
-    user: { id: string; name: string };
-    league: { id: string; name: string };
+    user: { id: number; name: string; balance: number; points: number };
+    league: { id: number; name: string };
 }
 
 interface FantasyStore {

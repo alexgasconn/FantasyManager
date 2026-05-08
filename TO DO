@@ -1,0 +1,441 @@
+MEJORA COMPLETA DE LA APP FANTASY FOOTBALL ANALYTICS
+
+OBJETIVO GENERAL
+Convertir la app en una plataforma avanzada de análisis fantasy estilo “Bloomberg + SofaScore + Moneyball”, enfocada en:
+
+* scouting
+* predicción
+* alineaciones automáticas
+* value investing
+* métricas avanzadas
+* optimización de mercado
+* detección de gangas
+* riesgo/rotación
+* recomendación de capitán/ariete
+* evolución de valor y puntos
+
+==================================================
+
+1. BASE DE DATOS DE JUGADORES
+   ==================================================
+
+Crear una tabla global con TODOS los jugadores y TODA la información disponible:
+
+* nombre
+* equipo
+* posición
+* valor actual
+* cláusula
+* puntos totales
+* media
+* minutos
+* goles
+* asistencias
+* tarjetas
+* titularidades
+* suplencias
+* lesiones
+* estado
+* rachas
+* tendencia de precio
+* evolución diaria
+* rival próximo
+* local/visitante
+* dificultad del rival
+* probabilidad de jugar
+* score IA
+* subscores
+* ROI
+* valor esperado
+* diferencia vs valor esperado
+* volatilidad
+* consistencia
+* etc
+
+IMPORTANTE:
+
+* tabla estilo dataframe profesional
+* filtros por columna
+* sorters por columna
+* búsqueda global
+* filtros rápidos:
+
+  * ganga
+  * sobrevalorado
+  * lesionado
+  * titular probable
+  * capitán
+  * ariete
+  * inversión
+  * vender
+  * evitar
+
+==================================================
+2. PERFIL DETALLADO DE CADA JUGADOR
+===================================
+
+Al hacer click en un jugador:
+
+* abrir modal/página MUCHO MÁS GRANDE
+* diseño estilo dashboard profesional
+
+SECCIONES:
+
+* resumen general
+* scores
+* gráficas
+* historial
+* mercado
+* análisis IA
+* próximo partido
+* riesgo
+* comparativas
+
+MOSTRAR:
+
+* puntos por jornada
+* eventos por jornada
+
+  * goles
+  * asistencias
+  * tarjetas
+  * MVP
+  * suplente
+  * lesión
+* evolución diaria de precio
+* evolución de score IA
+* tendencia semanal/mensual
+* comparación con jugadores similares
+* ROI histórico
+* expected price
+* distancia a regresión
+* volatilidad
+* consistencia
+* rendimiento casa/fuera
+* rendimiento vs rivales fuertes/débiles
+* rendimiento reciente
+* predicción próximos partidos
+
+==================================================
+3. SISTEMA DE SCORES IA
+=======================
+
+Cada jugador debe tener múltiples scores independientes:
+
+A) SCORE DE RENDIMIENTO
+Evalúa:
+
+* puntos totales
+* media
+* forma últimos partidos
+* consistencia
+* minutos
+* titularidades
+* lesiones
+* riesgo de rotación
+* fiabilidad
+* rachas
+* local/visitante
+
+B) SCORE DE MERCADO
+Evalúa:
+
+* ROI
+* relación calidad/precio
+* valor esperado
+* tendencia de precio
+* velocidad de subida/bajada
+* distancia al precio “justo”
+* volatilidad
+* potencial de crecimiento
+* valor futuro estimado
+
+C) SCORE PRÓXIMO PARTIDO
+Evalúa:
+
+* rival
+* Elo rival
+* local/visitante
+* goles encajados rival
+* goles marcados rival
+* forma rival
+* matchup por posición
+* rendimiento casa/fuera
+* descanso
+* probabilidad de jugar
+
+D) SCORE IA GENERAL
+Combinación ponderada de:
+
+* rendimiento
+* mercado
+* próximo partido
+* riesgo
+
+Mostrar siempre:
+
+* score numérico
+* barra visual
+* color dinámico:
+
+  * rojo malo
+  * naranja mediocre
+  * amarillo normal
+  * verde bueno
+  * verde brillante élite
+
+==================================================
+4. REGRESIÓN LINEAL Y VALOR ESPERADO
+====================================
+
+Crear una pestaña “GRÁFICAS”.
+
+Añadir:
+
+* scatterplots
+* regresión lineal
+* regresión múltiple avanzada
+
+Variables:
+
+* valor
+* puntos
+* media
+* minutos
+* ROI
+* forma
+* tendencia
+* score IA
+* etc
+
+Usar la regresión para:
+
+* calcular valor esperado
+* detectar gangas
+* detectar sobrevalorados
+* definir thresholds dinámicos
+
+Mostrar:
+
+* línea de regresión
+* distancia a la línea
+* % sobrevalorado
+* % infravalorado
+
+FILTROS:
+
+* posición
+* precio
+* equipo
+* score
+* tendencia
+* lesionados
+* etc
+
+==================================================
+5. ETIQUETAS INTELIGENTES
+=========================
+
+Añadir labels automáticas:
+
+* GANGA
+* SOBREVALORADO
+* EVITAR
+* INVERSIÓN
+* TITULAR FIJO
+* ROTACIÓN
+* LESIONADO
+* RIESGO
+* EN RACHA
+* CAPITÁN
+* ARIETE
+* DIFERENCIAL
+* APUESTA
+* HIGH RISK
+* SAFE PICK
+* VALUE PICK
+
+==================================================
+6. MI EQUIPO
+============
+
+Cambiar tarjetas por vista tabla/lista.
+
+Mostrar:
+
+* todos los datos
+* todas las scores
+* filtros
+* ordenación
+
+Añadir recomendaciones:
+
+* vender
+* mantener
+* alinear
+* banquillo
+* inversión
+* clausular
+* transferible
+
+==================================================
+7. ALINEACIONES AUTOMÁTICAS
+===========================
+
+Nueva pestaña:
+“ALINEACIÓN”
+
+FUNCIONES:
+
+* elegir formación
+* sugerir alineación automática
+* botón:
+  “SUGERIR MEJOR ALINEACIÓN”
+
+Formaciones:
+
+* 4-3-3
+* 4-4-2
+* 3-5-2
+* 5-3-2
+* 3-3-4
+* etc
+
+El algoritmo debe:
+
+* maximizar score IA total
+* respetar restricciones
+* considerar riesgo
+* considerar rival
+* considerar forma
+
+CAPITÁN:
+
+* puntuación x2
+* límite configurable de precio
+
+ARIETE:
+
+* +3 si marca
+* NO tiene que ser delantero
+* límite configurable de precio
+
+BANQUILLO:
+
+* 1 POR
+* 1 DEF
+* 1 CEN
+* 1 DEL
+* elegidos automáticamente
+
+RESTRICCIONES:
+
+* máximo jugadores mismo equipo
+* configurable en ajustes
+
+==================================================
+8. AJUSTES
+==========
+
+Configurar:
+
+* precio máximo capitán
+* precio máximo ariete
+* máximo jugadores mismo equipo
+* pesos de scores
+* agresividad mercado
+* thresholds de ganga
+* thresholds de riesgo
+
+==================================================
+9. API CLUB ELO
+===============
+
+Integrar API ClubELO:
+
+* api.clubelo.com/Fixtures
+* api.clubelo.com/TEAM
+
+Usar Elo para:
+
+* dificultad rival
+* predicción partido
+* probabilidad victoria
+* expectativa goles
+* contexto del matchup
+
+Mostrar:
+
+* dificultad visual 1-5
+* colores
+* tooltip detallado
+
+==================================================
+10. VISUALIZACIONES
+===================
+
+Añadir MUCHAS más gráficas:
+
+* evolución precio
+* evolución puntos
+* score IA histórico
+* tendencia
+* ROI
+* comparación jugadores
+* radar charts
+* scatterplots
+* heatmaps
+* rolling averages
+* percentiles
+
+==================================================
+11. PRECISIÓN DEL MODELO
+========================
+
+MUY IMPORTANTE:
+Los cálculos deben ser extremadamente precisos.
+
+No usar reglas simples.
+
+Usar:
+
+* regresión múltiple
+* percentiles
+* rolling averages
+* weighted averages
+* decay temporal
+* volatilidad
+* confidence score
+* análisis contextual
+
+Objetivo:
+
+* evitar fichajes malos
+* detectar value picks antes de subir
+* maximizar puntos fantasy
+* mejorar alineaciones automáticamente
+* minimizar riesgo
+
+==================================================
+12. UX/UI
+=========
+
+Mejorar muchísimo:
+
+* tamaño modal jugador
+* claridad visual
+* tablas
+* spacing
+* colores
+* tooltips
+* responsive
+* badges
+* comparativas
+* navegación
+
+Diseño:
+
+* moderno
+* denso en información
+* rápido de leer
+* estilo dashboard financiero/deportivo profesional

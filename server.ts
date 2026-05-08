@@ -21,21 +21,21 @@ async function startServer() {
         },
         body: JSON.stringify({ email, password }),
       });
-      
+
       const contentType = response.headers.get('content-type');
       let data;
-      
+
       if (contentType && contentType.includes('application/json')) {
         data = await response.json();
       } else {
         const text = await response.text();
         console.error('Non-JSON response from Biwenger:', text.substring(0, 200));
-        return res.status(response.status).json({ 
+        return res.status(response.status).json({
           error: `Invalid response from Biwenger: ${response.statusText}`,
           details: text.substring(0, 200)
         });
       }
-      
+
       res.status(response.status).json(data);
     } catch (e) {
       console.error('Login error:', e);
@@ -204,6 +204,33 @@ async function startServer() {
     } catch (e) {
       console.error(e);
       res.status(500).json({ error: "Internal Error" });
+    }
+  });
+
+  // === FutbolFantasy Scraping Proxy ===
+  app.get("/api/scrape/equipo/:slug", async (req, res) => {
+    try {
+      const { slug } = req.params;
+      const url = `https://www.futbolfantasy.com/laliga/equipos/${slug}`;
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+          'Accept-Language': 'es-ES,es;q=0.9',
+          'Accept-Encoding': 'gzip, deflate',
+          'Connection': 'keep-alive',
+          'Upgrade-Insecure-Requests': '1',
+        },
+      });
+      if (!response.ok) {
+        return res.status(response.status).json({ error: `FutbolFantasy returned ${response.status}` });
+      }
+      const html = await response.text();
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.send(html);
+    } catch (e) {
+      console.error('Scrape error:', e);
+      res.status(500).json({ error: 'Scraping failed' });
     }
   });
 

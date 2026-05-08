@@ -15,7 +15,7 @@ export function ProximosRivales() {
             jornada: i + 1,
             rival: `Rival ${i + 1}`,
             dificultad: Math.floor(Math.random() * 5) + 1,
-            local: Math.random() > 0.5 ? 'local' : 'visitante',
+            local: (Math.random() > 0.5 ? 'local' : 'visitante') as 'local' | 'visitante',
         }));
     };
 

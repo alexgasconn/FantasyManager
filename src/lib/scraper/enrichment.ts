@@ -1,4 +1,4 @@
-import { PlayerData } from '../types/fantasy';
+import { PlayerData } from '../../types/fantasy';
 import { scrapePlantilla } from './futbolfantasy';
 
 // Cache de equipos ya scrapeados

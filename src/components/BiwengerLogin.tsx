@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useFantasyStore } from '../store/fantasyStore';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -17,50 +17,44 @@ export function BiwengerLogin() {
         setError(null);
 
         try {
-            const res = await fetch('/api/biwenger/login', {
+            // 1. Login to get token
+            const loginRes = await fetch('/api/biwenger/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password }),
             });
+            const loginData = await loginRes.json();
+            if (!loginRes.ok) {
+                throw new Error(loginData.userMessage || loginData.message || 'Email o contraseña incorrectos');
+            }
+            const token = loginData.token;
+            if (!token) throw new Error('No se recibió token');
 
-            let data;
-            const contentType = res.headers.get('content-type');
-            
-            if (contentType && contentType.includes('application/json')) {
-                data = await res.json();
-            } else {
-                const text = await res.text();
-                console.error('Non-JSON response:', text.substring(0, 500));
-                throw new Error(`Respuesta inválida del servidor: ${text.substring(0, 100)}...`);
+            // 2. Get account data to find league + user IDs
+            const acctRes = await fetch('/api/biwenger/account', {
+                headers: { 'Authorization': `Bearer ${token}` },
+            });
+            const acctData = await acctRes.json();
+            if (!acctRes.ok || !acctData.data?.leagues?.length) {
+                throw new Error('No se encontraron ligas en tu cuenta');
             }
 
-            console.log('Login response:', { status: res.status, data });
+            const league = acctData.data.leagues[0];
+            const leagueUser = league.user;
 
-            if (!res.ok) {
-                throw new Error(data.error?.message || data.error || data.details || data.message || 'Error en el login');
-            }
-
-            // Biwenger API retorna token directamente o dentro de user
-            const token = data.token || data.user?.token;
-            if (!token) {
-                console.error('Invalid response structure:', data);
-                throw new Error('Estructura de respuesta inválida: falta token');
-            }
-
-            // Guardar token y datos del usuario
             setBiwengerAuth({
-                token: token,
-                user: { 
-                    id: data.user?.id || data.id || '', 
-                    name: data.user?.name || data.name || '' 
+                token,
+                user: {
+                    id: leagueUser.id,
+                    name: leagueUser.name,
+                    balance: leagueUser.balance,
+                    points: leagueUser.points,
                 },
-                league: { 
-                    id: data.user?.league || data.league || '', 
-                    name: '' 
+                league: {
+                    id: league.id,
+                    name: league.name,
                 },
             });
-
-            localStorage.setItem('biwenger_token', token);
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Error desconocido';
             setError(message);

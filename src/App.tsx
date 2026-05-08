@@ -22,7 +22,7 @@ type Seccion = 'inicio' | 'miequipo' | 'formacion' | 'mercado' | 'predicciones' 
 
 function App() {
   const [seccionActiva, setSeccionActiva] = useState<Seccion>('inicio');
-  const { biwengerAuth, isBiwengerLoggedIn } = useFantasyStore();
+  const { isBiwengerLoggedIn } = useFantasyStore();
   const { loading } = useBiwengerData();
 
   // Mostrar login si no hay sesión
