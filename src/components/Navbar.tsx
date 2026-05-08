@@ -10,8 +10,8 @@ export function Navbar({ seccionActiva, setSeccioActiva }: { seccionActiva: Secc
     const [menuAbierto, setMenuAbierto] = useState(false);
 
     const handleLogout = () => {
-      setBiwengerAuth(null);
-      localStorage.removeItem('biwenger_token');
+        setBiwengerAuth(null);
+        localStorage.removeItem('biwenger_token');
     };
 
     const secciones: { id: Seccion; label: string; icon: string }[] = [

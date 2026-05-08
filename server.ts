@@ -21,11 +21,25 @@ async function startServer() {
         },
         body: JSON.stringify({ email, password }),
       });
-      const data = await response.json();
+      
+      const contentType = response.headers.get('content-type');
+      let data;
+      
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        console.error('Non-JSON response from Biwenger:', text.substring(0, 200));
+        return res.status(response.status).json({ 
+          error: `Invalid response from Biwenger: ${response.statusText}`,
+          details: text.substring(0, 200)
+        });
+      }
+      
       res.status(response.status).json(data);
     } catch (e) {
-      console.error(e);
-      res.status(500).json({ error: "Internal Error" });
+      console.error('Login error:', e);
+      res.status(500).json({ error: "Internal Error", details: e instanceof Error ? e.message : String(e) });
     }
   });
 

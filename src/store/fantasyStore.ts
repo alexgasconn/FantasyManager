@@ -3,9 +3,9 @@ import { persist } from 'zustand/middleware';
 import { PlayerData, Plataforma } from '../types/fantasy';
 
 interface BiwengerAuth {
-  token: string;
-  user: { id: string; name: string };
-  league: { id: string; name: string };
+    token: string;
+    user: { id: string; name: string };
+    league: { id: string; name: string };
 }
 
 interface FantasyStore {

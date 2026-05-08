@@ -33,7 +33,7 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar seccionActiva={seccionActiva} setSeccioActiva={setSeccionActiva} />
-      
+
       {loading ? (
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
