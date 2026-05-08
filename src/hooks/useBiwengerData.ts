@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useFantasyStore } from '../store/fantasyStore';
 import { PlayerData, Posicion } from '../types/fantasy';
 import { scrapePlantilla } from '../lib/scraper/futbolfantasy';
+import { apiUrl, readJsonOrThrow } from '../lib/api';
 
 const POS_MAP: Record<number, Posicion> = { 1: 'Portero', 2: 'Defensa', 3: 'Mediocampista', 4: 'Delantero' };
 
@@ -26,15 +27,15 @@ export function useBiwengerData() {
 
             // 1. Load user's players (IDs + ownership info)
             const [userRes, catalogRes] = await Promise.all([
-                fetch('/api/biwenger/user', { headers }),
-                fetch('/api/biwenger/catalog'),
+                fetch(apiUrl('/api/biwenger/user'), { headers }),
+                fetch(apiUrl('/api/biwenger/catalog')),
             ]);
 
             if (!userRes.ok) throw new Error(`Error cargando jugadores: ${userRes.status}`);
             if (!catalogRes.ok) throw new Error(`Error cargando catálogo: ${catalogRes.status}`);
 
-            const userData = await userRes.json();
-            const catalogData = await catalogRes.json();
+            const userData = await readJsonOrThrow<any>(userRes, 'Biwenger user');
+            const catalogData = await readJsonOrThrow<any>(catalogRes, 'Biwenger catalog');
 
             const myPlayerEntries = userData.data?.players || [];
             const catalogPlayers = catalogData.data?.players || {};
@@ -95,6 +96,8 @@ export function useBiwengerData() {
                 // If we found FutbolFantasy enrichment, use it; otherwise build from Biwenger data
                 const player: PlayerData = ffMatch ? {
                     ...ffMatch,
+                    equipoSlug: ffMatch.equipoSlug || bSlug,
+                    equipo: ffMatch.equipo || catalogTeams[String(catPlayer.teamID)]?.name || bSlug,
                     // Override with Biwenger-specific data
                     fantasy: {
                         ...ffMatch.fantasy,
@@ -108,6 +111,8 @@ export function useBiwengerData() {
                 } : {
                     nombre: catPlayer.name,
                     url: `/player/${catPlayer.slug}`,
+                    equipoSlug: bSlug,
+                    equipo: catalogTeams[String(catPlayer.teamID)]?.name || bSlug,
                     posicion,
                     edad: 0,
                     nacionalidad: '',

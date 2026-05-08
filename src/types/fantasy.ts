@@ -54,6 +54,8 @@ export type Recommendation = 'vender' | 'mantener' | 'alinear' | 'banquillo' | '
 export interface PlayerData {
     nombre: string;
     url: string;
+    equipo?: string;
+    equipoSlug?: string;
     posicion: Posicion;
     edad: number;
     nacionalidad: string;

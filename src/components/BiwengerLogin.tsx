@@ -3,6 +3,7 @@ import { useFantasyStore } from '../store/fantasyStore';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Card } from '../../components/ui/card';
+import { apiUrl, readJsonOrThrow } from '../lib/api';
 
 export function BiwengerLogin() {
     const { setBiwengerAuth, setPlataforma } = useFantasyStore();
@@ -18,12 +19,12 @@ export function BiwengerLogin() {
 
         try {
             // 1. Login to get token
-            const loginRes = await fetch('/api/biwenger/login', {
+            const loginRes = await fetch(apiUrl('/api/biwenger/login'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password }),
             });
-            const loginData = await loginRes.json();
+            const loginData = await readJsonOrThrow<any>(loginRes, 'Login');
             if (!loginRes.ok) {
                 throw new Error(loginData.userMessage || loginData.message || 'Email o contraseña incorrectos');
             }
@@ -31,10 +32,10 @@ export function BiwengerLogin() {
             if (!token) throw new Error('No se recibió token');
 
             // 2. Get account data to find league + user IDs
-            const acctRes = await fetch('/api/biwenger/account', {
+            const acctRes = await fetch(apiUrl('/api/biwenger/account'), {
                 headers: { 'Authorization': `Bearer ${token}` },
             });
-            const acctData = await acctRes.json();
+            const acctData = await readJsonOrThrow<any>(acctRes, 'Cuenta');
             if (!acctRes.ok || !acctData.data?.leagues?.length) {
                 throw new Error('No se encontraron ligas en tu cuenta');
             }

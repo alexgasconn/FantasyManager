@@ -4,7 +4,18 @@ import path from "path";
 
 async function startServer() {
   const app = express();
-  const PORT = 5173;
+  const PORT = Number(process.env.PORT || 5173);
+
+  app.use((req, res, next) => {
+    const corsOrigin = process.env.CORS_ORIGIN || '*';
+    res.header('Access-Control-Allow-Origin', corsOrigin);
+    res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-League, X-User');
+    if (req.method === 'OPTIONS') {
+      return res.sendStatus(204);
+    }
+    next();
+  });
 
   app.use(express.json());
 

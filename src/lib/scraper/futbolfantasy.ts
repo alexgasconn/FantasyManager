@@ -1,5 +1,7 @@
 import * as cheerio from 'cheerio';
 import { PlayerData, Posicion, Status, Forma } from '../../types/fantasy';
+import { EQUIPOS_LALIGA } from '../../data/equipos';
+import { apiUrl } from '../api';
 
 const formaMap: Record<string, Forma> = {
     'arrow-1': 'muy_bajando',
@@ -21,7 +23,8 @@ const jerarquiaMap: Record<string, string> = {
 
 export async function scrapePlantilla(equipo: string): Promise<PlayerData[]> {
     // Use server proxy to avoid CORS issues
-    const url = `/api/scrape/equipo/${equipo}`;
+    const url = apiUrl(`/api/scrape/equipo/${equipo}`);
+    const equipoNombre = EQUIPOS_LALIGA.find(e => e.slug === equipo)?.nombre || equipo;
 
     try {
         const res = await fetch(url);
@@ -64,6 +67,8 @@ export async function scrapePlantilla(equipo: string): Promise<PlayerData[]> {
             players.push({
                 nombre,
                 url: href,
+                equipo: equipoNombre,
+                equipoSlug: equipo,
                 posicion,
                 edad: parseInt(get('data-edad')) || 0,
                 nacionalidad: get('data-nacionalidad'),

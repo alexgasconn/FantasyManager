@@ -1,5 +1,6 @@
 // ClubElo API integration
 // Maps LaLiga team names from ClubElo format to our slugs
+import { apiUrl } from './api';
 
 const ELO_SLUG_MAP: Record<string, string> = {
     'Barcelona': 'barcelona',
@@ -40,7 +41,7 @@ export async function fetchClubElo(): Promise<EloEntry[]> {
     if (eloCache) return eloCache;
 
     try {
-        const res = await fetch('/api/clubelo');
+        const res = await fetch(apiUrl('/api/clubelo'));
         const csv = await res.text();
         const lines = csv.trim().split('\n');
 
