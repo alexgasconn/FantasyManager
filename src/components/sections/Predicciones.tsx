@@ -1,18 +1,25 @@
 import { useState, useMemo } from 'react';
 import { useFantasyStore } from '../../store/fantasyStore';
 import { useSettingsStore } from '../../store/settingsStore';
-import { useEquipoData } from '../../hooks/useEquipoData';
+import { useAllTeamsPlayers } from '../../hooks/useAllTeamsPlayers';
 import { Card } from '../../../components/ui/card';
 import { PlayerDetailModal } from '../PlayerDetailModal';
 import { enrichAllPlayers, scoreColor, labelColor } from '../../lib/scoring';
 import { calcOnceProbable, formaDisplay, fmtValor } from '../../lib/utils/fantasy';
 import { PlayerData } from '../../types/fantasy';
+import { EQUIPOS_LALIGA } from '../../data/equipos';
 
 export function Predicciones() {
-    const { equipoSeleccionado, plataformaActiva } = useFantasyStore();
+    const { plataformaActiva } = useFantasyStore();
     const { settings } = useSettingsStore();
-    const { jugadores } = useEquipoData(equipoSeleccionado);
+    const { players, loading, error } = useAllTeamsPlayers();
+    const [filtroEquipo, setFiltroEquipo] = useState('todos');
     const [selectedPlayer, setSelectedPlayer] = useState<PlayerData | null>(null);
+
+    const jugadores = useMemo(() => {
+        if (filtroEquipo === 'todos') return players;
+        return players.filter(p => p.equipoSlug === filtroEquipo);
+    }, [players, filtroEquipo]);
 
     const enriched = useMemo(() =>
         enrichAllPlayers(jugadores, plataformaActiva, settings),
@@ -33,7 +40,26 @@ export function Predicciones() {
 
     return (
         <div className="space-y-5 p-4">
-            <h1 className="text-2xl font-bold">🔮 Predicciones y Análisis</h1>
+            <div className="flex items-center justify-between">
+                <h1 className="text-2xl font-bold">🔮 Predicciones y Análisis</h1>
+                <select value={filtroEquipo} onChange={e => setFiltroEquipo(e.target.value)}
+                    className="px-3 py-1.5 border rounded text-sm font-medium">
+                    <option value="todos">Todos los equipos</option>
+                    {EQUIPOS_LALIGA.map(eq => <option key={eq.slug} value={eq.slug}>{eq.nombre}</option>)}
+                </select>
+            </div>
+
+            {error && (
+                <Card className="p-3 text-sm text-red-700 bg-red-50 border-red-200">
+                    Error cargando equipos: {error}
+                </Card>
+            )}
+
+            {loading && (
+                <Card className="p-3 text-sm text-gray-500">
+                    Actualizando datos de equipos...
+                </Card>
+            )}
 
             {/* Top recommendations */}
             <div className="grid grid-cols-1 gap-3 md:grid-cols-3">

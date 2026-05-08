@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useFantasyStore } from '../../store/fantasyStore';
 import { useSettingsStore } from '../../store/settingsStore';
-import { useEquipoData } from '../../hooks/useEquipoData';
+import { useAllTeamsPlayers } from '../../hooks/useAllTeamsPlayers';
 import { Card } from '../../../components/ui/card';
 import { PlayerTable } from '../PlayerTable';
 import { PlayerDetailModal } from '../PlayerDetailModal';
@@ -10,10 +10,16 @@ import { PlayerData } from '../../types/fantasy';
 import { EQUIPOS_LALIGA } from '../../data/equipos';
 
 export function Mercado() {
-    const { equipoSeleccionado, setEquipoSeleccionado, plataformaActiva, addJugador, miEquipo } = useFantasyStore();
+    const { plataformaActiva, addJugador, miEquipo } = useFantasyStore();
     const { settings } = useSettingsStore();
-    const { jugadores, loading } = useEquipoData(equipoSeleccionado);
+    const { players, loading, error } = useAllTeamsPlayers();
+    const [filtroEquipo, setFiltroEquipo] = useState('todos');
     const [selectedPlayer, setSelectedPlayer] = useState<PlayerData | null>(null);
+
+    const jugadores = useMemo(() => {
+        if (filtroEquipo === 'todos') return players;
+        return players.filter(p => p.equipoSlug === filtroEquipo);
+    }, [players, filtroEquipo]);
 
     const enriched = useMemo(() =>
         enrichAllPlayers(jugadores, plataformaActiva, settings),
@@ -29,12 +35,19 @@ export function Mercado() {
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-bold">🔄 Mercado de Fichajes</h1>
                 <div className="flex items-center gap-2">
-                    <select value={equipoSeleccionado} onChange={e => setEquipoSeleccionado(e.target.value)}
+                    <select value={filtroEquipo} onChange={e => setFiltroEquipo(e.target.value)}
                         className="px-3 py-1.5 border rounded text-sm font-medium">
+                        <option value="todos">Todos</option>
                         {EQUIPOS_LALIGA.map(eq => <option key={eq.slug} value={eq.slug}>{eq.nombre}</option>)}
                     </select>
                 </div>
             </div>
+
+            {error && (
+                <Card className="p-3 text-sm text-red-700 bg-red-50 border-red-200">
+                    Error cargando equipos: {error}
+                </Card>
+            )}
 
             {/* Quick stats */}
             <div className="flex gap-3">

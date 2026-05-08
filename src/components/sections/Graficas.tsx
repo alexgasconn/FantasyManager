@@ -3,7 +3,8 @@ import { useFantasyStore } from '../../store/fantasyStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import { Card } from '../../../components/ui/card';
 import { enrichAllPlayers, linearRegression, scoreColor } from '../../lib/scoring';
-import { fmtValor } from '../../lib/utils/fantasy';
+import { useAllTeamsPlayers } from '../../hooks/useAllTeamsPlayers';
+import { EQUIPOS_LALIGA } from '../../data/equipos';
 import {
     BarChart, Bar, ScatterChart, Scatter, LineChart, Line,
     RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
@@ -17,12 +18,17 @@ const COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'
 type ScatterMode = 'valor-media' | 'valor-score' | 'media-prob' | 'roi-score';
 
 export function Graficas() {
-    const { miEquipo, equiposCache, equipoSeleccionado, plataformaActiva } = useFantasyStore();
+    const { miEquipo, plataformaActiva } = useFantasyStore();
     const { settings } = useSettingsStore();
+    const { players, loading, error } = useAllTeamsPlayers();
     const [scatterMode, setScatterMode] = useState<ScatterMode>('valor-media');
+    const [filtroEquipo, setFiltroEquipo] = useState('todos');
     const [filtroPos, setFiltroPos] = useState('');
 
-    const allPlayers = equiposCache[equipoSeleccionado]?.data || [];
+    const allPlayers = useMemo(() => {
+        if (filtroEquipo === 'todos') return players;
+        return players.filter(p => p.equipoSlug === filtroEquipo);
+    }, [players, filtroEquipo]);
     const enrichedAll = useMemo(() => enrichAllPlayers(allPlayers, plataformaActiva, settings), [allPlayers, plataformaActiva, settings]);
     const enrichedTeam = useMemo(() => enrichAllPlayers(miEquipo, plataformaActiva, settings), [miEquipo, plataformaActiva, settings]);
 
@@ -103,6 +109,11 @@ export function Graficas() {
                 <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-bold">Regresión Lineal y Valor Esperado</h2>
                     <div className="flex items-center gap-2">
+                        <select value={filtroEquipo} onChange={e => setFiltroEquipo(e.target.value)}
+                            className="px-2 py-1 border rounded text-sm">
+                            <option value="todos">Todos los equipos</option>
+                            {EQUIPOS_LALIGA.map(eq => <option key={eq.slug} value={eq.slug}>{eq.nombre}</option>)}
+                        </select>
                         <select value={scatterMode} onChange={e => setScatterMode(e.target.value as ScatterMode)}
                             className="px-2 py-1 border rounded text-sm">
                             <option value="valor-media">Valor vs Media</option>
@@ -120,6 +131,12 @@ export function Graficas() {
                         </select>
                     </div>
                 </div>
+                {error && (
+                    <div className="mb-2 text-sm text-red-700">Error cargando equipos: {error}</div>
+                )}
+                {loading && (
+                    <div className="mb-2 text-sm text-gray-500">Actualizando datos de equipos...</div>
+                )}
                 <div className="flex items-center gap-4 text-xs text-gray-500 mb-2">
                     <span>R² = {reg.r2.toFixed(3)}</span>
                     <span>y = {reg.slope.toFixed(2)}x + {reg.intercept.toFixed(2)}</span>
