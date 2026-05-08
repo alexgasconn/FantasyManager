@@ -1,90 +1,93 @@
+import { useState, useMemo } from 'react';
 import { useFantasyStore } from '../../store/fantasyStore';
-import { useEquipoData } from '../../hooks/useEquipoData';
-import { Button } from '../../../components/ui/button';
+import { useSettingsStore } from '../../store/settingsStore';
 import { Card } from '../../../components/ui/card';
-import { Badge } from '../../../components/ui/badge';
-import { fmtValor, calcMediaEquipo, calcValorTotal, getStatusBadge } from '../../lib/utils/fantasy';
+import { PlayerTable } from '../PlayerTable';
+import { PlayerDetailModal } from '../PlayerDetailModal';
+import { fmtValor, calcValorTotal, calcMediaEquipo } from '../../lib/utils/fantasy';
+import { enrichAllPlayers, recommendationDisplay, scoreColor } from '../../lib/scoring';
+import { PlayerData } from '../../types/fantasy';
 
 export function MiEquipo() {
-    const { miEquipo, removeJugador, plataformaActiva, setEquipoSeleccionado, presupuestoTotal } = useFantasyStore();
-    const { refresh, loading } = useEquipoData('barcelona');
+    const { miEquipo, removeJugador, plataformaActiva, presupuestoTotal } = useFantasyStore();
+    const { settings } = useSettingsStore();
+    const [selectedPlayer, setSelectedPlayer] = useState<PlayerData | null>(null);
 
-    const valorEquipo = calcValorTotal(miEquipo, plataformaActiva);
-    const mediaEquipo = calcMediaEquipo(miEquipo, plataformaActiva);
-    const presupuestoRestante = presupuestoTotal - valorEquipo;
+    const enriched = useMemo(() =>
+        enrichAllPlayers(miEquipo, plataformaActiva, settings),
+        [miEquipo, plataformaActiva, settings]
+    );
+
+    const valorEquipo = calcValorTotal(enriched, plataformaActiva);
+    const mediaEquipo = calcMediaEquipo(enriched, plataformaActiva);
+    const avgScore = enriched.length > 0 ? enriched.reduce((s, p) => s + (p.scores?.general || 0), 0) / enriched.length : 0;
+
+    const recCounts = {
+        alinear: enriched.filter(p => p.recommendation === 'alinear').length,
+        vender: enriched.filter(p => p.recommendation === 'vender').length,
+        inversion: enriched.filter(p => p.recommendation === 'inversión').length,
+        banquillo: enriched.filter(p => p.recommendation === 'banquillo').length,
+    };
 
     return (
-        <div className="space-y-6 p-6">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                <Card className="p-4">
-                    <h3 className="text-sm font-medium text-gray-500">Valor Total</h3>
+        <div className="space-y-4 p-4">
+            {/* KPIs */}
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-6">
+                <Card className="p-3">
+                    <p className="text-[10px] text-gray-500 uppercase">Jugadores</p>
+                    <p className="text-2xl font-bold">{enriched.length}</p>
+                </Card>
+                <Card className="p-3">
+                    <p className="text-[10px] text-gray-500 uppercase">Valor Total</p>
                     <p className="text-2xl font-bold">{fmtValor(valorEquipo)}</p>
                 </Card>
-                <Card className="p-4">
-                    <h3 className="text-sm font-medium text-gray-500">Media Equipo</h3>
+                <Card className="p-3">
+                    <p className="text-[10px] text-gray-500 uppercase">Media</p>
                     <p className="text-2xl font-bold">{mediaEquipo.toFixed(2)}</p>
                 </Card>
-                <Card className="p-4">
-                    <h3 className="text-sm font-medium text-gray-500">Presupuesto Restante</h3>
-                    <p className={`text-2xl font-bold ${presupuestoRestante > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {fmtValor(Math.abs(presupuestoRestante))}
-                    </p>
+                <Card className="p-3">
+                    <p className="text-[10px] text-gray-500 uppercase">Score IA</p>
+                    <p className="text-2xl font-bold" style={{ color: scoreColor(avgScore) }}>{avgScore.toFixed(0)}</p>
+                </Card>
+                <Card className="p-3">
+                    <p className="text-[10px] text-gray-500 uppercase">Presupuesto</p>
+                    <p className="text-2xl font-bold">{fmtValor(presupuestoTotal)}</p>
+                </Card>
+                <Card className="p-3">
+                    <p className="text-[10px] text-gray-500 uppercase">Recomendaciones</p>
+                    <div className="flex gap-1 mt-1 text-[10px] font-medium">
+                        <span className="text-green-600">⚡{recCounts.alinear}</span>
+                        <span className="text-red-600">📤{recCounts.vender}</span>
+                        <span className="text-blue-600">📈{recCounts.inversion}</span>
+                        <span className="text-yellow-600">💺{recCounts.banquillo}</span>
+                    </div>
                 </Card>
             </div>
 
-            <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold">Mi Equipo ({miEquipo.length}/15)</h2>
-                <Button onClick={refresh} disabled={loading} variant="outline" size="sm">
-                    {loading ? 'Actualizando...' : 'Actualizar datos'}
-                </Button>
+            {/* Recommendations */}
+            <div className="flex flex-wrap gap-2">
+                {enriched.filter(p => p.recommendation && p.recommendation !== 'mantener').map(p => {
+                    const rec = recommendationDisplay(p.recommendation!);
+                    return (
+                        <button key={p.nombre} onClick={() => setSelectedPlayer(p)}
+                            className={`${rec.color} bg-gray-50 hover:bg-gray-100 px-2 py-1 rounded text-xs font-medium transition-colors`}>
+                            {rec.emoji} {p.nombre.split(' ').pop()} → {rec.label}
+                        </button>
+                    );
+                })}
             </div>
 
-            {miEquipo.length === 0 ? (
-                <Card className="p-8 text-center">
-                    <p className="text-gray-500">No hay jugadores en tu equipo. Ve al Mercado para añadir jugadores.</p>
-                </Card>
+            {/* Table */}
+            {enriched.length === 0 ? (
+                <Card className="p-8 text-center text-gray-500">No hay jugadores. Ve al Mercado.</Card>
             ) : (
-                <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-                    {miEquipo.map(player => {
-                        const { icon, color } = getStatusBadge(player.status, player.diasLesion);
-                        return (
-                            <Card key={player.nombre} className="p-4 hover:shadow-lg transition-shadow">
-                                <div className="aspect-square bg-gradient-to-b from-blue-400 to-blue-600 rounded-lg mb-3 flex items-center justify-center text-white text-4xl font-bold">
-                                    {player.nombre.charAt(0)}
-                                </div>
-                                <h3 className="font-semibold text-sm truncate">{player.nombre}</h3>
-                                <p className="text-xs text-gray-500">{player.posicion}</p>
+                <PlayerTable jugadores={enriched} plataforma={plataformaActiva} onPlayerClick={setSelectedPlayer}
+                    showActions onRemove={p => removeJugador(p.nombre)} isOwned={() => true} />
+            )}
 
-                                <div className="mt-2 space-y-1">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-xs">Prob.</span>
-                                        <Badge variant="outline">{player.probabilidad}</Badge>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-xs">Media</span>
-                                        <span className="font-bold">{player.fantasy[plataformaActiva].media.toFixed(2)}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-xs">Valor</span>
-                                        <span className="font-bold text-sm">{fmtValor(player.fantasy[plataformaActiva].valor)}</span>
-                                    </div>
-                                </div>
-
-                                <div className="mt-3 pt-3 border-t space-y-2">
-                                    <div className={`text-xs ${color}`}>{icon} {player.status}</div>
-                                    <Button
-                                        onClick={() => removeJugador(player.nombre)}
-                                        variant="destructive"
-                                        size="sm"
-                                        className="w-full"
-                                    >
-                                        Eliminar
-                                    </Button>
-                                </div>
-                            </Card>
-                        );
-                    })}
-                </div>
+            {selectedPlayer && (
+                <PlayerDetailModal player={selectedPlayer} plataforma={plataformaActiva}
+                    onClose={() => setSelectedPlayer(null)} allPlayers={enriched} />
             )}
         </div>
     );

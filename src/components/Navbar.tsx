@@ -3,7 +3,7 @@ import { useFantasyStore } from '../store/fantasyStore';
 import { Button } from '../../components/ui/button';
 import { Menu, X, LogOut } from 'lucide-react';
 
-type Seccion = 'inicio' | 'miequipo' | 'formacion' | 'mercado' | 'predicciones' | 'scores' | 'rivales' | 'graficas' | 'jugadores';
+type Seccion = 'inicio' | 'miequipo' | 'alineacion' | 'mercado' | 'predicciones' | 'scores' | 'rivales' | 'graficas' | 'jugadores' | 'ajustes';
 
 export function Navbar({ seccionActiva, setSeccioActiva }: { seccionActiva: Seccion; setSeccioActiva: (s: Seccion) => void }) {
     const { plataformaActiva, setPlataforma, miEquipo, setBiwengerAuth, biwengerAuth } = useFantasyStore();
@@ -15,15 +15,16 @@ export function Navbar({ seccionActiva, setSeccioActiva }: { seccionActiva: Secc
     };
 
     const secciones: { id: Seccion; label: string; icon: string }[] = [
-        { id: 'inicio', label: 'Inicio', icon: '🏠' },
+        { id: 'inicio', label: 'Dashboard', icon: '🏠' },
         { id: 'miequipo', label: 'Mi Equipo', icon: '⚽' },
-        { id: 'formacion', label: 'Formación', icon: '🧩' },
+        { id: 'alineacion', label: 'Alineación', icon: '⚡' },
         { id: 'mercado', label: 'Mercado', icon: '🔄' },
-        { id: 'predicciones', label: 'Predicciones', icon: '🔮' },
-        { id: 'scores', label: 'Scores', icon: '📊' },
-        { id: 'rivales', label: 'Rivales', icon: '📅' },
-        { id: 'graficas', label: 'Gráficas', icon: '📈' },
         { id: 'jugadores', label: 'Jugadores', icon: '👥' },
+        { id: 'predicciones', label: 'Predicciones', icon: '🔮' },
+        { id: 'scores', label: 'Scores IA', icon: '📊' },
+        { id: 'graficas', label: 'Gráficas', icon: '📈' },
+        { id: 'rivales', label: 'Rivales', icon: '📅' },
+        { id: 'ajustes', label: 'Ajustes', icon: '⚙️' },
     ];
 
     const plataformas = ['laliga', 'comunio', 'biwenger', 'futmondo', 'mister'] as const;

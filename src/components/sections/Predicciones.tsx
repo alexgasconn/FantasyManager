@@ -1,137 +1,149 @@
+import { useState, useMemo } from 'react';
 import { useFantasyStore } from '../../store/fantasyStore';
+import { useSettingsStore } from '../../store/settingsStore';
 import { useEquipoData } from '../../hooks/useEquipoData';
 import { Card } from '../../../components/ui/card';
-import { Badge } from '../../../components/ui/badge';
-import { calcOnceProbable, formaDisplay } from '../../lib/utils/fantasy';
+import { PlayerDetailModal } from '../PlayerDetailModal';
+import { enrichAllPlayers, scoreColor, labelColor } from '../../lib/scoring';
+import { calcOnceProbable, formaDisplay, fmtValor } from '../../lib/utils/fantasy';
+import { PlayerData } from '../../types/fantasy';
 
 export function Predicciones() {
     const { equipoSeleccionado, plataformaActiva } = useFantasyStore();
+    const { settings } = useSettingsStore();
     const { jugadores } = useEquipoData(equipoSeleccionado);
+    const [selectedPlayer, setSelectedPlayer] = useState<PlayerData | null>(null);
 
-    const onceProbable = calcOnceProbable(jugadores, '4-3-3');
-    const dudosos = jugadores.filter(j => j.probabilidadVal >= 30 && j.probabilidadVal < 60);
-    const bajas = jugadores.filter(j => j.probabilidadVal === 0);
+    const enriched = useMemo(() =>
+        enrichAllPlayers(jugadores, plataformaActiva, settings),
+        [jugadores, plataformaActiva, settings]
+    );
 
-    const mejorCapitan = jugadores.reduce((best, player) => {
-        const riskScore = player.fantasy[plataformaActiva].media * (player.probabilidadVal / 100);
-        const bestScore = best.fantasy[plataformaActiva].media * (best.probabilidadVal / 100);
-        return riskScore > bestScore ? player : best;
-    });
+    const onceProbable = calcOnceProbable(enriched, '4-3-3');
+    const dudosos = enriched.filter(j => j.probabilidadVal >= 30 && j.probabilidadVal < 60);
+    const bajas = enriched.filter(j => j.probabilidadVal === 0 || j.status === 'lesionado');
 
-    const mejorFichaje = jugadores.reduce((best, player) => {
-        const ratio = player.fantasy[plataformaActiva].media / (player.fantasy[plataformaActiva].valor || 1);
-        const bestRatio = best.fantasy[plataformaActiva].media / (best.fantasy[plataformaActiva].valor || 1);
-        return ratio > bestRatio ? player : best;
-    });
+    const capitanes = [...enriched]
+        .filter(p => p.probabilidadVal >= 70)
+        .sort((a, b) => (b.scores?.general || 0) - (a.scores?.general || 0))
+        .slice(0, 3);
 
-    const evitar = jugadores.filter(j => j.status === 'apercibido' && j.jerarquia.includes('Titular'));
+    const gangas = enriched.filter(p => p.labels?.includes('GANGA')).slice(0, 5);
+    const evitar = enriched.filter(p => p.labels?.includes('EVITAR') || p.labels?.includes('SOBREVALORADO')).slice(0, 5);
 
     return (
-        <div className="space-y-6 p-6">
-            <h1 className="text-3xl font-bold">Predicciones y Análisis</h1>
+        <div className="space-y-5 p-4">
+            <h1 className="text-2xl font-bold">🔮 Predicciones y Análisis</h1>
 
-            {/* Consejos */}
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                <Card className="p-6 border-l-4 border-l-yellow-500">
-                    <div className="flex items-start gap-3">
-                        <span className="text-3xl">👑</span>
-                        <div>
-                            <h3 className="font-bold mb-1">Mejor Capitán</h3>
-                            <p className="text-sm text-gray-600">{mejorCapitan.nombre}</p>
-                            <p className="text-xs text-gray-500 mt-1">
-                                Media: {mejorCapitan.fantasy[plataformaActiva].media.toFixed(2)} | Prob: {mejorCapitan.probabilidad}
-                            </p>
+            {/* Top recommendations */}
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                <Card className="p-4 border-l-4 border-l-amber-500">
+                    <h3 className="text-xs font-bold text-amber-700 uppercase mb-2">👑 Mejores Capitanes</h3>
+                    {capitanes.map((p, i) => (
+                        <div key={p.nombre} className="flex items-center justify-between py-1 cursor-pointer hover:bg-amber-50 rounded px-1"
+                            onClick={() => setSelectedPlayer(p)}>
+                            <span className="text-sm"><strong>#{i + 1}</strong> {p.nombre}</span>
+                            <span className="text-xs font-bold" style={{ color: scoreColor(p.scores?.general || 0) }}>
+                                {Math.round(p.scores?.general || 0)}
+                            </span>
                         </div>
-                    </div>
+                    ))}
                 </Card>
 
-                <Card className="p-6 border-l-4 border-l-green-500">
-                    <div className="flex items-start gap-3">
-                        <span className="text-3xl">💎</span>
-                        <div>
-                            <h3 className="font-bold mb-1">Mejor Fichaje</h3>
-                            <p className="text-sm text-gray-600">{mejorFichaje.nombre}</p>
-                            <p className="text-xs text-gray-500 mt-1">
-                                Ratio Media/Valor óptimo
-                            </p>
-                        </div>
-                    </div>
+                <Card className="p-4 border-l-4 border-l-green-500">
+                    <h3 className="text-xs font-bold text-green-700 uppercase mb-2">💎 Gangas</h3>
+                    {gangas.length === 0 ? <p className="text-xs text-gray-400">Ninguna detectada</p> :
+                        gangas.map(p => (
+                            <div key={p.nombre} className="flex items-center justify-between py-1 cursor-pointer hover:bg-green-50 rounded px-1"
+                                onClick={() => setSelectedPlayer(p)}>
+                                <span className="text-sm">{p.nombre}</span>
+                                <span className="text-xs text-gray-500">{fmtValor(p.fantasy[plataformaActiva].valor)}</span>
+                            </div>
+                        ))
+                    }
                 </Card>
 
-                <Card className="p-6 border-l-4 border-l-red-500">
-                    <div className="flex items-start gap-3">
-                        <span className="text-3xl">🚫</span>
-                        <div>
-                            <h3 className="font-bold mb-1">Evitar</h3>
-                            <p className="text-sm text-gray-600">{evitar.length} jugadores apercibidos titulares</p>
-                            <p className="text-xs text-gray-500 mt-1">
-                                Riesgo de sanción
-                            </p>
-                        </div>
-                    </div>
+                <Card className="p-4 border-l-4 border-l-red-500">
+                    <h3 className="text-xs font-bold text-red-700 uppercase mb-2">🚫 Evitar</h3>
+                    {evitar.length === 0 ? <p className="text-xs text-gray-400">Ninguno</p> :
+                        evitar.map(p => (
+                            <div key={p.nombre} className="flex items-center justify-between py-1 cursor-pointer hover:bg-red-50 rounded px-1"
+                                onClick={() => setSelectedPlayer(p)}>
+                                <span className="text-sm">{p.nombre}</span>
+                                <div className="flex gap-0.5">
+                                    {(p.labels || []).filter(l => l === 'EVITAR' || l === 'SOBREVALORADO').map(l => {
+                                        const { bg, text } = labelColor(l);
+                                        return <span key={l} className={`${bg} ${text} px-1 rounded text-[9px]`}>{l}</span>;
+                                    })}
+                                </div>
+                            </div>
+                        ))
+                    }
                 </Card>
             </div>
 
             {/* Once probable */}
-            <Card className="p-6">
-                <h2 className="text-2xl font-bold mb-4">Once Probable (4-3-3)</h2>
-                <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                    {onceProbable.map(player => {
-                        const { emoji } = formaDisplay(player.forma);
+            <Card className="p-4">
+                <h2 className="font-bold mb-3">Once Probable (4-3-3)</h2>
+                <div className="grid grid-cols-2 gap-2 md:grid-cols-4 lg:grid-cols-6">
+                    {onceProbable.map(p => {
+                        const { emoji } = formaDisplay(p.forma);
                         return (
-                            <Card key={player.nombre} className="p-3 bg-gradient-to-br from-blue-50 to-blue-100">
-                                <p className="font-semibold text-sm">{player.nombre}</p>
-                                <p className="text-xs text-gray-600">{player.posicion}</p>
-                                <div className="mt-2 space-y-1 text-xs">
-                                    <div>Prob: <strong>{player.probabilidad}</strong></div>
-                                    <div>Media: <strong>{player.fantasy[plataformaActiva].media.toFixed(1)}</strong></div>
-                                    <div>Forma: {emoji}</div>
+                            <div key={p.nombre} className="bg-blue-50 rounded-lg p-2 cursor-pointer hover:bg-blue-100"
+                                onClick={() => setSelectedPlayer(p)}>
+                                <div className="flex items-center gap-1.5">
+                                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold"
+                                        style={{ backgroundColor: scoreColor(p.scores?.general || 0) }}>
+                                        {Math.round(p.scores?.general || 0)}
+                                    </div>
+                                    <div>
+                                        <p className="font-medium text-xs truncate max-w-[80px]">{p.nombre}</p>
+                                        <p className="text-[10px] text-gray-500">{p.posicion.substring(0, 3)} {emoji} {p.probabilidad}%</p>
+                                    </div>
                                 </div>
-                            </Card>
+                            </div>
                         );
                     })}
                 </div>
             </Card>
 
-            {/* Dudosos */}
-            {dudosos.length > 0 && (
-                <Card className="p-6 border-yellow-300 border-2">
-                    <h3 className="text-xl font-bold mb-4 text-yellow-700">⚠️ Jugadores Dudosos (30-60% prob.)</h3>
-                    <div className="grid grid-cols-1 gap-3">
-                        {dudosos.slice(0, 5).map(player => (
-                            <div key={player.nombre} className="flex items-center justify-between p-3 bg-yellow-50 rounded border border-yellow-200">
+            {/* Dudosos + Bajas */}
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                {dudosos.length > 0 && (
+                    <Card className="p-4 border-yellow-300 border">
+                        <h3 className="font-bold mb-2 text-sm text-yellow-700">⚠️ Dudosos ({dudosos.length})</h3>
+                        {dudosos.slice(0, 6).map(p => (
+                            <div key={p.nombre} className="flex items-center justify-between py-1.5 border-b border-yellow-100 last:border-0 cursor-pointer hover:bg-yellow-50"
+                                onClick={() => setSelectedPlayer(p)}>
                                 <div>
-                                    <p className="font-semibold">{player.nombre}</p>
-                                    <p className="text-sm text-gray-600">{player.status} - {player.jerarquia}</p>
+                                    <p className="text-sm font-medium">{p.nombre}</p>
+                                    <p className="text-[10px] text-gray-500">{p.jerarquia}</p>
                                 </div>
                                 <div className="text-right">
-                                    <p className="font-bold text-lg">{player.probabilidad}</p>
-                                    <p className="text-xs text-gray-500">Rival: {player.rival} ({player.rivalDificultad}/5)</p>
+                                    <p className="text-sm font-bold">{p.probabilidad}%</p>
+                                    <p className="text-[10px] text-gray-500">{p.rival} ({p.rivalDificultad}/5)</p>
                                 </div>
                             </div>
                         ))}
-                    </div>
-                </Card>
-            )}
+                    </Card>
+                )}
 
-            {/* Bajas confirmadas */}
-            {bajas.length > 0 && (
-                <Card className="p-6 border-red-300 border-2">
-                    <h3 className="text-xl font-bold mb-4 text-red-700">🏥 Bajas Confirmadas (0% prob.)</h3>
-                    <div className="grid grid-cols-1 gap-3">
-                        {bajas.slice(0, 5).map(player => (
-                            <div key={player.nombre} className="flex items-center justify-between p-3 bg-red-50 rounded border border-red-200">
-                                <div>
-                                    <p className="font-semibold">{player.nombre}</p>
-                                    <p className="text-sm text-gray-600">{player.status}</p>
-                                </div>
-                                <div className="text-right">
-                                    <Badge variant="destructive">{player.status.toUpperCase()}</Badge>
-                                </div>
+                {bajas.length > 0 && (
+                    <Card className="p-4 border-red-300 border">
+                        <h3 className="font-bold mb-2 text-sm text-red-700">🏥 Bajas ({bajas.length})</h3>
+                        {bajas.slice(0, 6).map(p => (
+                            <div key={p.nombre} className="flex items-center justify-between py-1.5 border-b border-red-100 last:border-0">
+                                <p className="text-sm font-medium">{p.nombre}</p>
+                                <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded">{p.status}</span>
                             </div>
                         ))}
-                    </div>
-                </Card>
+                    </Card>
+                )}
+            </div>
+
+            {selectedPlayer && (
+                <PlayerDetailModal player={selectedPlayer} plataforma={plataformaActiva}
+                    onClose={() => setSelectedPlayer(null)} allPlayers={enriched} />
             )}
         </div>
     );

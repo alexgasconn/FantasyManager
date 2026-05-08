@@ -9,23 +9,23 @@ import { BiwengerLogin } from './components/BiwengerLogin';
 import { Navbar } from './components/Navbar';
 import { Dashboard } from './components/Dashboard';
 import { MiEquipo } from './components/sections/MiEquipo';
-import { Formacion } from './components/sections/Formacion';
+import { Alineacion } from './components/sections/Alineacion';
 import { Mercado } from './components/sections/Mercado';
 import { Predicciones } from './components/sections/Predicciones';
 import { Scores } from './components/sections/Scores';
 import { ProximosRivales } from './components/sections/ProximosRivales';
 import { Graficas } from './components/sections/Graficas';
 import { Jugadores } from './components/sections/JugadoresExplorer';
+import { Ajustes } from './components/sections/Ajustes';
 import { useBiwengerData } from './hooks/useBiwengerData';
 
-type Seccion = 'inicio' | 'miequipo' | 'formacion' | 'mercado' | 'predicciones' | 'scores' | 'rivales' | 'graficas' | 'jugadores';
+type Seccion = 'inicio' | 'miequipo' | 'alineacion' | 'mercado' | 'predicciones' | 'scores' | 'rivales' | 'graficas' | 'jugadores' | 'ajustes';
 
 function App() {
   const [seccionActiva, setSeccionActiva] = useState<Seccion>('inicio');
   const { isBiwengerLoggedIn } = useFantasyStore();
   const { loading } = useBiwengerData();
 
-  // Mostrar login si no hay sesión
   if (!isBiwengerLoggedIn()) {
     return <BiwengerLogin />;
   }
@@ -42,16 +42,17 @@ function App() {
           </div>
         </div>
       ) : (
-        <main className="max-w-7xl mx-auto">
+        <main className="max-w-full mx-auto">
           {seccionActiva === 'inicio' && <Dashboard />}
           {seccionActiva === 'miequipo' && <MiEquipo />}
-          {seccionActiva === 'formacion' && <Formacion />}
+          {seccionActiva === 'alineacion' && <Alineacion />}
           {seccionActiva === 'mercado' && <Mercado />}
           {seccionActiva === 'predicciones' && <Predicciones />}
           {seccionActiva === 'scores' && <Scores />}
           {seccionActiva === 'rivales' && <ProximosRivales />}
           {seccionActiva === 'graficas' && <Graficas />}
           {seccionActiva === 'jugadores' && <Jugadores />}
+          {seccionActiva === 'ajustes' && <Ajustes />}
         </main>
       )}
     </div>

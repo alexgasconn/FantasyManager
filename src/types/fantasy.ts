@@ -35,6 +35,22 @@ export interface PlayerFantasy {
     rpg: { media: number; total: number };
 }
 
+// IA Scores
+export interface IAScores {
+    rendimiento: number;   // 0-100
+    mercado: number;       // 0-100
+    partido: number;       // 0-100
+    general: number;       // 0-100 combined
+}
+
+export type SmartLabel =
+    | 'GANGA' | 'SOBREVALORADO' | 'EVITAR' | 'INVERSIÓN'
+    | 'TITULAR_FIJO' | 'ROTACIÓN' | 'LESIONADO' | 'RIESGO'
+    | 'EN_RACHA' | 'CAPITÁN' | 'ARIETE' | 'DIFERENCIAL'
+    | 'APUESTA' | 'HIGH_RISK' | 'SAFE_PICK' | 'VALUE_PICK';
+
+export type Recommendation = 'vender' | 'mantener' | 'alinear' | 'banquillo' | 'inversión' | 'clausular' | 'transferible';
+
 export interface PlayerData {
     nombre: string;
     url: string;
@@ -54,6 +70,17 @@ export interface PlayerData {
     localVisitante: 'local' | 'visitante';
     stats: PlayerStats;
     fantasy: PlayerFantasy;
+    // IA enrichment (computed client-side)
+    scores?: IAScores;
+    labels?: SmartLabel[];
+    recommendation?: Recommendation;
+    roi?: number;
+    valorEsperado?: number;
+    diffVsEsperado?: number;
+    volatilidad?: number;
+    consistencia?: number;
+    elo?: number;
+    eloDificultad?: number;
 }
 
 export interface EquipoData {
@@ -68,3 +95,25 @@ export interface Equipo {
     nombre: string;
     id: number;
 }
+
+export interface AppSettings {
+    precioMaxCapitan: number;
+    precioMaxAriete: number;
+    maxJugadoresMismoEquipo: number;
+    pesosScores: { rendimiento: number; mercado: number; partido: number };
+    agresividadMercado: number; // 1-5
+    thresholdGanga: number;    // percentile
+    thresholdRiesgo: number;   // percentile
+    formacion: string;
+}
+
+export const DEFAULT_SETTINGS: AppSettings = {
+    precioMaxCapitan: 30_000_000,
+    precioMaxAriete: 15_000_000,
+    maxJugadoresMismoEquipo: 3,
+    pesosScores: { rendimiento: 0.4, mercado: 0.3, partido: 0.3 },
+    agresividadMercado: 3,
+    thresholdGanga: 25,
+    thresholdRiesgo: 75,
+    formacion: '4-3-3',
+};
