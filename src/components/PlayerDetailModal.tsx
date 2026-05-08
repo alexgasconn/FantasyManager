@@ -125,7 +125,7 @@ export function PlayerDetailModal({ player: p, plataforma, onClose, allPlayers =
                         <KpiCard label="Media" value={p.fantasy[plataforma].media.toFixed(2)} />
                         <KpiCard label="Total Pts" value={String(p.fantasy[plataforma].total)} />
                         <KpiCard label="ROI" value={(p.roi || 0).toFixed(2)} />
-                        <KpiCard label="Prob. Jugar" value={`${p.probabilidad}%`} />
+                        <KpiCard label="Prob. Jugar" value={`${p.probabilidadVal}%`} />
                         <KpiCard label="Minutos" value={String(p.stats.minutos)} />
                         <KpiCard label="G / A" value={`${p.stats.goles} / ${p.stats.asistencias}`} />
                         <KpiCard label="Consistencia" value={`${p.consistencia || '-'}`} />

@@ -6,6 +6,11 @@ import { apiUrl, readJsonOrThrow } from '../lib/api';
 
 const POS_MAP: Record<number, Posicion> = { 1: 'Portero', 2: 'Defensa', 3: 'Mediocampista', 4: 'Delantero' };
 
+function fallbackProbabilidad(status: string): number {
+    if (status === 'injured' || status === 'sanctioned') return 0;
+    return 50;
+}
+
 export function useBiwengerData() {
     const { biwengerAuth, miEquipo, addJugador, clearEquipo, setPresupuesto, setEquipoData } = useFantasyStore();
     const [loading, setLoading] = useState(false);
@@ -91,11 +96,15 @@ export function useBiwengerData() {
                     normalized(catPlayer.name).includes(normalized(p.nombre))
                 );
 
-                const posicion = POS_MAP[catPlayer.position] || 'Delantero';
+                const posicion = POS_MAP[catPlayer.position];
+                // Ignore non-standard positions (e.g., coach/staff) from Biwenger payload.
+                if (!posicion) continue;
+                const defaultProb = fallbackProbabilidad(catPlayer.status);
 
                 // If we found FutbolFantasy enrichment, use it; otherwise build from Biwenger data
                 const player: PlayerData = ffMatch ? {
                     ...ffMatch,
+                    posiciones: ffMatch.posiciones && ffMatch.posiciones.length > 0 ? ffMatch.posiciones : [ffMatch.posicion],
                     equipoSlug: ffMatch.equipoSlug || bSlug,
                     equipo: ffMatch.equipo || catalogTeams[String(catPlayer.teamID)]?.name || bSlug,
                     // Override with Biwenger-specific data
@@ -114,11 +123,12 @@ export function useBiwengerData() {
                     equipoSlug: bSlug,
                     equipo: catalogTeams[String(catPlayer.teamID)]?.name || bSlug,
                     posicion,
+                    posiciones: [posicion],
                     edad: 0,
                     nacionalidad: '',
                     pie: '',
-                    probabilidad: '100',
-                    probabilidadVal: 100,
+                    probabilidad: String(defaultProb),
+                    probabilidadVal: defaultProb,
                     status: catPlayer.status === 'ok' ? 'disponible' : catPlayer.status === 'injured' ? 'lesionado' : 'disponible',
                     diasLesion: 0,
                     jerarquia: 'Titular habitual',

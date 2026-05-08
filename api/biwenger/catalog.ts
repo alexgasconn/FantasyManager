@@ -1,0 +1,23 @@
+import { forwardJson, handleOptions, setCors } from '../_shared';
+
+export default async function handler(req: any, res: any) {
+    if (handleOptions(req, res)) return;
+    setCors(res);
+
+    if (req.method !== 'GET') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    try {
+        const upstream = await fetch('https://biwenger.as.com/api/v2/competitions/la-liga/data?lang=es&score=5', {
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            },
+        });
+
+        return await forwardJson(res, upstream, 'Biwenger catalog');
+    } catch (error) {
+        return res.status(500).json({ error: 'Internal Error', details: error instanceof Error ? error.message : String(error) });
+    }
+}

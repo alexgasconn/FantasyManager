@@ -57,6 +57,7 @@ export interface PlayerData {
     equipo?: string;
     equipoSlug?: string;
     posicion: Posicion;
+    posiciones?: Posicion[];
     edad: number;
     nacionalidad: string;
     pie: string;
@@ -102,6 +103,7 @@ export interface AppSettings {
     precioMaxCapitan: number;
     precioMaxAriete: number;
     maxJugadoresMismoEquipo: number;
+    useMultiPosicion: boolean;
     pesosScores: { rendimiento: number; mercado: number; partido: number };
     agresividadMercado: number; // 1-5
     thresholdGanga: number;    // percentile
@@ -113,6 +115,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     precioMaxCapitan: 30_000_000,
     precioMaxAriete: 15_000_000,
     maxJugadoresMismoEquipo: 3,
+    useMultiPosicion: false,
     pesosScores: { rendimiento: 0.4, mercado: 0.3, partido: 0.3 },
     agresividadMercado: 3,
     thresholdGanga: 25,

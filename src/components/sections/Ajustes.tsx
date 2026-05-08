@@ -4,7 +4,7 @@ import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { fmtValor } from '../../lib/utils/fantasy';
 
-const FORMACIONES = ['4-3-3', '4-4-2', '3-5-2', '5-3-2', '3-4-3', '4-2-3-1', '4-1-4-1'];
+const FORMACIONES = ['4-3-3', '4-4-2', '3-5-2', '5-3-2', '3-4-3', '4-2-3-1', '4-1-4-1', '3-3-4'];
 
 export function Ajustes() {
     const { settings, updateSettings, resetSettings } = useSettingsStore();
@@ -38,6 +38,20 @@ export function Ajustes() {
                             onChange={e => updateSettings({ maxJugadoresMismoEquipo: Number(e.target.value) })}
                             className="mt-1"
                         />
+                    </div>
+                    <div className="md:col-span-2">
+                        <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={settings.useMultiPosicion}
+                                onChange={e => updateSettings({ useMultiPosicion: e.target.checked })}
+                                className="w-4 h-4"
+                            />
+                            Usar multiposición en alineación automática
+                        </label>
+                        <p className="text-xs text-gray-500 mt-1">
+                            Si está desactivado, se usa solo la posición principal de Biwenger.
+                        </p>
                     </div>
                 </div>
             </Card>

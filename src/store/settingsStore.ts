@@ -18,6 +18,15 @@ export const useSettingsStore = create<SettingsStore>()(
                 })),
             resetSettings: () => set({ settings: { ...DEFAULT_SETTINGS } }),
         }),
-        { name: 'fantasy-settings', version: 1 }
+        {
+            name: 'fantasy-settings',
+            version: 2,
+            migrate: (persistedState: unknown) => {
+                const state = persistedState as { settings?: Partial<AppSettings> } | undefined;
+                return {
+                    settings: { ...DEFAULT_SETTINGS, ...(state?.settings || {}) },
+                };
+            },
+        }
     )
 );

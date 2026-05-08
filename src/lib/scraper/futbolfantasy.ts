@@ -21,6 +21,35 @@ const jerarquiaMap: Record<string, string> = {
     '70': 'Reserva',
 };
 
+function normalizePosicion(raw: string): Posicion | null {
+    const s = raw.toLowerCase();
+    if (s.includes('port')) return 'Portero';
+    if (s.includes('def')) return 'Defensa';
+    if (s.includes('medio') || s.includes('centro') || s.includes('cen')) return 'Mediocampista';
+    if (s.includes('del')) return 'Delantero';
+    return null;
+}
+
+function parsePosiciones(raw: string): Posicion[] {
+    const parts = raw
+        .split(/[\/|,-]/)
+        .map(p => p.trim())
+        .filter(Boolean);
+
+    const out: Posicion[] = [];
+    for (const part of parts) {
+        const pos = normalizePosicion(part);
+        if (pos && !out.includes(pos)) out.push(pos);
+    }
+
+    if (out.length === 0) {
+        const single = normalizePosicion(raw);
+        if (single) out.push(single);
+    }
+
+    return out;
+}
+
 export async function scrapePlantilla(equipo: string): Promise<PlayerData[]> {
     // Use server proxy to avoid CORS issues
     const url = apiUrl(`/api/scrape/equipo/${equipo}`);
@@ -47,13 +76,16 @@ export async function scrapePlantilla(equipo: string): Promise<PlayerData[]> {
             seen.add(nombre);
 
             const parentDiv = a.closest('div[class*="jugador_"]');
-            const posicionStr = parentDiv.attr('data-posicion') || 'Delantero';
-            const posicion = posicionStr as Posicion;
+            const posicionRaw = parentDiv.attr('data-posicion') || 'Delantero';
+            const posiciones = parsePosiciones(posicionRaw);
+            // Skip non-player cards (coach/staff or unknown slots).
+            if (posiciones.length === 0) return;
+            const posicion = posiciones[0];
 
             const get = (attr: string) => a.attr(attr) || '';
 
-            const probStr = get('data-probabilidad');
-            const probVal = parseInt(probStr) || 0;
+            const probRaw = get('data-probabilidad');
+            const probVal = Number(String(probRaw).replace(/[^\d]/g, '')) || 0;
 
             const lesion = get('data-lesion');
             const sancionado = get('data-sancionado');
@@ -70,10 +102,11 @@ export async function scrapePlantilla(equipo: string): Promise<PlayerData[]> {
                 equipo: equipoNombre,
                 equipoSlug: equipo,
                 posicion,
+                posiciones,
                 edad: parseInt(get('data-edad')) || 0,
                 nacionalidad: get('data-nacionalidad'),
                 pie: get('data-pie'),
-                probabilidad: probStr,
+                probabilidad: String(probVal),
                 probabilidadVal: probVal,
                 status,
                 diasLesion: lesion !== '-1' ? parseInt(lesion) || 0 : 0,

@@ -335,24 +335,57 @@ export function calcBestLineup(
     plat: Plataforma,
     formacion: string,
     settings: AppSettings = DEFAULT_SETTINGS
-): { titulares: PlayerData[]; capitan: PlayerData | null; ariete: PlayerData | null; banquillo: PlayerData[] } {
+): {
+    titulares: PlayerData[];
+    capitan: PlayerData | null;
+    ariete: PlayerData | null;
+    banquillo: PlayerData[];
+    lineas: { por: PlayerData[]; def: PlayerData[]; cen: PlayerData[]; del: PlayerData[] };
+} {
     const [nDef, nMed, nDel] = formacion.split('-').map(Number);
     const disponibles = players.filter(p => p.probabilidadVal > 0 && p.status === 'disponible');
 
     const sortByScore = (arr: PlayerData[]) =>
-        arr.slice().sort((a, b) => (b.scores?.general || 0) - (a.scores?.general || 0));
+        arr.slice().sort((a, b) => (b.scores?.general || 0) - (a.scores?.general || 0) || b.probabilidadVal - a.probabilidadVal);
 
-    const porteros = sortByScore(disponibles.filter(p => p.posicion === 'Portero'));
-    const defensas = sortByScore(disponibles.filter(p => p.posicion === 'Defensa'));
-    const medios = sortByScore(disponibles.filter(p => p.posicion === 'Mediocampista'));
-    const delanteros = sortByScore(disponibles.filter(p => p.posicion === 'Delantero'));
+    const eligiblePositions = (p: PlayerData) => {
+        if (settings.useMultiPosicion && p.posiciones && p.posiciones.length > 0) {
+            return p.posiciones;
+        }
+        return [p.posicion];
+    };
 
-    const titulares = [
-        ...porteros.slice(0, 1),
-        ...defensas.slice(0, nDef),
-        ...medios.slice(0, nMed),
-        ...delanteros.slice(0, nDel),
+    const requiredSlots: Array<'Portero' | 'Defensa' | 'Mediocampista' | 'Delantero'> = [
+        'Portero',
+        ...Array.from({ length: nDef }, () => 'Defensa' as const),
+        ...Array.from({ length: nMed }, () => 'Mediocampista' as const),
+        ...Array.from({ length: nDel }, () => 'Delantero' as const),
     ];
+
+    const sortedDisponibles = sortByScore(disponibles);
+    const usedNames = new Set<string>();
+    const assigned = new Map<string, 'Portero' | 'Defensa' | 'Mediocampista' | 'Delantero'>();
+    const titulares: PlayerData[] = [];
+
+    for (const slot of requiredSlots) {
+        const candidate = sortedDisponibles.find(p => !usedNames.has(p.nombre) && eligiblePositions(p).includes(slot));
+        if (candidate) {
+            usedNames.add(candidate.nombre);
+            titulares.push(candidate);
+            assigned.set(candidate.nombre, slot);
+        }
+    }
+
+    // If some slot couldn't be filled with strict eligibility, complete with best remaining players.
+    if (titulares.length < requiredSlots.length) {
+        for (const p of sortedDisponibles) {
+            if (titulares.length >= requiredSlots.length) break;
+            if (usedNames.has(p.nombre)) continue;
+            usedNames.add(p.nombre);
+            titulares.push(p);
+            assigned.set(p.nombre, p.posicion);
+        }
+    }
 
     const titularNames = new Set(titulares.map(p => p.nombre));
 
@@ -371,14 +404,22 @@ export function calcBestLineup(
         })[0] || null;
 
     // Bench: 1 per position from non-starters
+    const benchCandidates = sortByScore(disponibles.filter(p => !titularNames.has(p.nombre)));
     const banquillo = [
-        porteros.find(p => !titularNames.has(p.nombre)),
-        defensas.find(p => !titularNames.has(p.nombre)),
-        medios.find(p => !titularNames.has(p.nombre)),
-        delanteros.find(p => !titularNames.has(p.nombre)),
+        benchCandidates.find(p => eligiblePositions(p).includes('Portero')),
+        benchCandidates.find(p => eligiblePositions(p).includes('Defensa')),
+        benchCandidates.find(p => eligiblePositions(p).includes('Mediocampista')),
+        benchCandidates.find(p => eligiblePositions(p).includes('Delantero')),
     ].filter(Boolean) as PlayerData[];
 
-    return { titulares, capitan, ariete, banquillo };
+    const lineas = {
+        por: titulares.filter(p => (assigned.get(p.nombre) || p.posicion) === 'Portero'),
+        def: titulares.filter(p => (assigned.get(p.nombre) || p.posicion) === 'Defensa'),
+        cen: titulares.filter(p => (assigned.get(p.nombre) || p.posicion) === 'Mediocampista'),
+        del: titulares.filter(p => (assigned.get(p.nombre) || p.posicion) === 'Delantero'),
+    };
+
+    return { titulares, capitan, ariete, banquillo, lineas };
 }
 
 // ============================================================

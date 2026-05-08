@@ -98,7 +98,7 @@ export function Predicciones() {
                                     </div>
                                     <div>
                                         <p className="font-medium text-xs truncate max-w-[80px]">{p.nombre}</p>
-                                        <p className="text-[10px] text-gray-500">{p.posicion.substring(0, 3)} {emoji} {p.probabilidad}%</p>
+                                        <p className="text-[10px] text-gray-500">{p.posicion.substring(0, 3)} {emoji} {p.probabilidadVal}%</p>
                                     </div>
                                 </div>
                             </div>
@@ -120,7 +120,7 @@ export function Predicciones() {
                                     <p className="text-[10px] text-gray-500">{p.jerarquia}</p>
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-sm font-bold">{p.probabilidad}%</p>
+                                    <p className="text-sm font-bold">{p.probabilidadVal}%</p>
                                     <p className="text-[10px] text-gray-500">{p.rival} ({p.rivalDificultad}/5)</p>
                                 </div>
                             </div>

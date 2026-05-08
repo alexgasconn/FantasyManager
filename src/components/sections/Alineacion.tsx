@@ -2,11 +2,26 @@ import { useState, useMemo } from 'react';
 import { useFantasyStore } from '../../store/fantasyStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import { Card } from '../../../components/ui/card';
-import { Button } from '../../../components/ui/button';
 import { calcBestLineup, enrichAllPlayers, scoreColor } from '../../lib/scoring';
 import { fmtValor, probColor, formaDisplay } from '../../lib/utils/fantasy';
+import { PlayerData, Plataforma, Posicion } from '../../types/fantasy';
 
-const FORMACIONES = ['4-3-3', '4-4-2', '3-5-2', '5-3-2', '3-4-3', '4-2-3-1'];
+const FORMACIONES = ['4-3-3', '4-4-2', '3-5-2', '5-3-2', '3-4-3', '4-2-3-1', '3-3-4'];
+
+function posCode(pos: Posicion): 'POR' | 'DEF' | 'CEN' | 'DEL' {
+    if (pos === 'Portero') return 'POR';
+    if (pos === 'Defensa') return 'DEF';
+    if (pos === 'Mediocampista') return 'CEN';
+    return 'DEL';
+}
+
+function roleCodeForPlayer(p: PlayerData, lineup: { lineas: { por: PlayerData[]; def: PlayerData[]; cen: PlayerData[]; del: PlayerData[] } }): 'POR' | 'DEF' | 'CEN' | 'DEL' {
+    if (lineup.lineas.por.some(x => x.nombre === p.nombre)) return 'POR';
+    if (lineup.lineas.def.some(x => x.nombre === p.nombre)) return 'DEF';
+    if (lineup.lineas.cen.some(x => x.nombre === p.nombre)) return 'CEN';
+    if (lineup.lineas.del.some(x => x.nombre === p.nombre)) return 'DEL';
+    return posCode(p.posicion);
+}
 
 export function Alineacion() {
     const { miEquipo, plataformaActiva } = useFantasyStore();
@@ -57,10 +72,10 @@ export function Alineacion() {
 
     const fieldPositions = getPositions(formacion);
 
-    const portero = lineup.titulares.find(p => p.posicion === 'Portero');
-    const defensas = lineup.titulares.filter(p => p.posicion === 'Defensa');
-    const medios = lineup.titulares.filter(p => p.posicion === 'Mediocampista');
-    const delanteros = lineup.titulares.filter(p => p.posicion === 'Delantero');
+    const portero = lineup.lineas.por[0];
+    const defensas = lineup.lineas.def;
+    const medios = lineup.lineas.cen;
+    const delanteros = lineup.lineas.del;
 
     return (
         <div className="space-y-6 p-6">
@@ -118,7 +133,8 @@ export function Alineacion() {
                                 <PlayerOnField key={portero.nombre} player={portero} pos={fieldPositions.portero[0]}
                                     isCapitan={portero.nombre === lineup.capitan?.nombre}
                                     isAriete={portero.nombre === lineup.ariete?.nombre}
-                                    plataforma={plataformaActiva} />
+                                    plataforma={plataformaActiva}
+                                    roleCode="POR" />
                             )}
 
                             {/* Defensas */}
@@ -126,7 +142,8 @@ export function Alineacion() {
                                 <PlayerOnField key={p.nombre} player={p} pos={fieldPositions.defensas[i] || { x: 50, y: 72 }}
                                     isCapitan={p.nombre === lineup.capitan?.nombre}
                                     isAriete={p.nombre === lineup.ariete?.nombre}
-                                    plataforma={plataformaActiva} />
+                                    plataforma={plataformaActiva}
+                                    roleCode="DEF" />
                             ))}
 
                             {/* Medios */}
@@ -134,7 +151,8 @@ export function Alineacion() {
                                 <PlayerOnField key={p.nombre} player={p} pos={fieldPositions.medios[i] || { x: 50, y: 48 }}
                                     isCapitan={p.nombre === lineup.capitan?.nombre}
                                     isAriete={p.nombre === lineup.ariete?.nombre}
-                                    plataforma={plataformaActiva} />
+                                    plataforma={plataformaActiva}
+                                    roleCode="CEN" />
                             ))}
 
                             {/* Delanteros */}
@@ -142,7 +160,8 @@ export function Alineacion() {
                                 <PlayerOnField key={p.nombre} player={p} pos={fieldPositions.delanteros[i] || { x: 50, y: 22 }}
                                     isCapitan={p.nombre === lineup.capitan?.nombre}
                                     isAriete={p.nombre === lineup.ariete?.nombre}
-                                    plataforma={plataformaActiva} />
+                                    plataforma={plataformaActiva}
+                                    roleCode="DEL" />
                             ))}
                         </div>
                     </Card>
@@ -172,14 +191,14 @@ export function Alineacion() {
                                                 <td className="px-3 py-2 font-medium">
                                                     {isC && '👑 '}{isA && '🎯 '}{p.nombre}
                                                 </td>
-                                                <td className="px-3 py-2">{p.posicion.substring(0, 3)}</td>
+                                                <td className="px-3 py-2">{roleCodeForPlayer(p, lineup)}</td>
                                                 <td className="px-3 py-2 text-center">
                                                     <span className="inline-block w-8 h-6 rounded text-xs font-bold text-white flex items-center justify-center"
                                                         style={{ backgroundColor: scoreColor(p.scores?.general || 0) }}>
                                                         {Math.round(p.scores?.general || 0)}
                                                     </span>
                                                 </td>
-                                                <td className="px-3 py-2 text-center">{p.probabilidad}%</td>
+                                                <td className="px-3 py-2 text-center">{p.probabilidadVal}%</td>
                                                 <td className="px-3 py-2 text-center font-bold">{p.fantasy[plataformaActiva].media.toFixed(1)}</td>
                                                 <td className="px-3 py-2 text-center">{fmtValor(p.fantasy[plataformaActiva].valor)}</td>
                                                 <td className="px-3 py-2 text-center">
@@ -224,8 +243,16 @@ export function Alineacion() {
     );
 }
 
-function PlayerOnField({ player, pos, isCapitan, isAriete, plataforma }: any) {
+function PlayerOnField({ player, pos, isCapitan, isAriete, plataforma, roleCode }: {
+    player: PlayerData;
+    pos: { x: number; y: number };
+    isCapitan: boolean;
+    isAriete: boolean;
+    plataforma: Plataforma;
+    roleCode: 'POR' | 'DEF' | 'CEN' | 'DEL';
+}) {
     const score = player.scores?.general || 0;
+    const code = roleCode;
     return (
         <div className="absolute text-center" style={{
             left: `${pos.x}%`, top: `${pos.y}%`, transform: 'translate(-50%, -50%)',
@@ -242,8 +269,8 @@ function PlayerOnField({ player, pos, isCapitan, isAriete, plataforma }: any) {
                 <div className="bg-black/80 text-white text-[10px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap max-w-[70px] truncate">
                     {player.nombre.split(' ').pop()}
                 </div>
-                <div className="text-white text-[9px] font-semibold">
-                    {player.fantasy[plataforma].media.toFixed(1)}pts
+                <div className="text-white text-[9px] font-semibold bg-black/50 rounded px-1">
+                    {code} · {player.fantasy[plataforma].media.toFixed(1)} pts
                 </div>
             </div>
         </div>

@@ -224,7 +224,7 @@ export function PlayerTable({ jugadores, plataforma, onPlayerClick, showActions,
                                     </td>
                                     <td className="px-2 py-1.5">
                                         <div className={`inline-block px-1.5 py-0.5 rounded text-white text-[10px] font-bold ${probColor(p.probabilidadVal)}`}>
-                                            {p.probabilidad}%
+                                            {p.probabilidadVal}%
                                         </div>
                                     </td>
                                     <td className="px-2 py-1.5 font-bold text-right">{p.fantasy[plataforma].media.toFixed(1)}</td>

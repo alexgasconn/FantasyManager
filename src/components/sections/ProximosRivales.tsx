@@ -95,7 +95,7 @@ export function ProximosRivales() {
                                 <div key={p.nombre} className="flex items-center justify-between text-xs">
                                     <span className="truncate max-w-[120px]">{p.nombre}</span>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-gray-500">{p.probabilidad}%</span>
+                                        <span className="text-gray-500">{p.probabilidadVal}%</span>
                                         <span className="font-bold" style={{ color: scoreColor(p.scores?.general || 0) }}>
                                             {Math.round(p.scores?.general || 0)}
                                         </span>
