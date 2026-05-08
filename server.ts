@@ -4,7 +4,7 @@ import path from "path";
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = 5173;
 
   app.use(express.json());
 
@@ -84,7 +84,7 @@ async function startServer() {
       res.status(500).json({ error: "Internal Error" });
     }
   });
-  
+
   app.get("/api/biwenger/league", async (req, res) => {
     try {
       const authHeader = req.headers.authorization;
@@ -154,7 +154,7 @@ async function startServer() {
       const user = req.headers["x-user"] as string;
       const offset = req.query.offset || 0;
       const limit = req.query.limit || 50;
-      
+
       const response = await fetch(`https://biwenger.as.com/api/v2/league/${leagueId}/board?type=transfer,market&offset=${offset}&limit=${limit}`, {
         headers: {
           "Content-type": "application/json",
@@ -176,7 +176,7 @@ async function startServer() {
     try {
       const authHeader = req.headers.authorization;
       const leagueId = req.headers["x-league"] as string;
-      
+
       const response = await fetch(`https://biwenger.as.com/api/v2/league/${leagueId}/schedule`, {
         headers: {
           "Content-type": "application/json",
@@ -199,7 +199,7 @@ async function startServer() {
       const date = new Date();
       date.setDate(date.getDate() - 1);
       const dateStr = date.toISOString().split("T")[0];
-      
+
       const response = await fetch(`http://api.clubelo.com/${dateStr}`);
       const csv = await response.text();
       res.status(200).send(csv);
