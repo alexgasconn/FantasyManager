@@ -26,17 +26,21 @@ export function BiwengerLogin() {
             });
             const loginData = await readJsonOrThrow<any>(loginRes, 'Login');
             if (!loginRes.ok) {
-                throw new Error(loginData.userMessage || loginData.message || 'Email o contraseña incorrectos');
+                const errorMsg = loginData.userMessage || loginData.message || loginData.error || 'Email o contraseña incorrectos';
+                throw new Error(errorMsg);
             }
             const token = loginData.token;
-            if (!token) throw new Error('No se recibió token');
+            if (!token) throw new Error('No se recibió token del servidor');
 
             // 2. Get account data to find league + user IDs
             const acctRes = await fetch(apiUrl('/api/biwenger/account'), {
                 headers: { 'Authorization': `Bearer ${token}` },
             });
             const acctData = await readJsonOrThrow<any>(acctRes, 'Cuenta');
-            if (!acctRes.ok || !acctData.data?.leagues?.length) {
+            if (!acctRes.ok) {
+                throw new Error(acctData.userMessage || acctData.message || 'Error al obtener datos de la cuenta');
+            }
+            if (!acctData.data?.leagues?.length) {
                 throw new Error('No se encontraron ligas en tu cuenta');
             }
 

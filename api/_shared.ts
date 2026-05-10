@@ -34,16 +34,30 @@ export async function readBody(req: any): Promise<any> {
 
 export async function forwardJson(res: any, upstream: Response, context: string) {
     setCors(res);
+    res.setHeader('Content-Type', 'application/json');
+    
     const contentType = upstream.headers.get('content-type') || '';
 
     if (contentType.includes('application/json')) {
-        const data = await upstream.json();
-        return res.status(upstream.status).json(data);
+        try {
+            const data = await upstream.json();
+            return res.status(upstream.status).json(data);
+        } catch (error) {
+            console.error(`[${context}] Failed to parse upstream JSON`, error);
+            return res.status(502).json({
+                error: 'Bad Gateway',
+                userMessage: 'Error procesando respuesta del servidor',
+                details: `${context}: Invalid JSON response`,
+            });
+        }
     }
 
     const text = await upstream.text();
+    console.error(`[${context}] Non-JSON response (${upstream.status}):`, text.slice(0, 200));
+    
     return res.status(upstream.status).json({
         error: `${context}: upstream non-JSON response`,
+        userMessage: 'Error de conexión con el servidor',
         status: upstream.status,
         details: text.slice(0, 200),
     });
