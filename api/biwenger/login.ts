@@ -21,16 +21,39 @@ export default async function handler(req: any, res: any) {
             });
         }
 
-        const upstream = await fetch('https://biwenger.as.com/api/v2/auth/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-            },
-            body: JSON.stringify({ email, password }),
-        });
+        console.log('[Login] Attempting auth with email:', email);
 
-        return await forwardJson(res, upstream, 'Biwenger login');
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+        try {
+            const upstream = await fetch('https://biwenger.as.com/api/v2/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'User-Agent': 'FantasyManager/1.0',
+                },
+                body: JSON.stringify({ email, password }),
+                signal: controller.signal,
+            });
+
+            clearTimeout(timeout);
+            console.log('[Login] Upstream response status:', upstream.status);
+            
+            return await forwardJson(res, upstream, 'Biwenger login');
+        } catch (fetchError) {
+            clearTimeout(timeout);
+            console.error('[Login] Fetch error:', fetchError);
+            
+            if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+                return res.status(504).json({
+                    error: 'Gateway Timeout',
+                    userMessage: 'El servidor tardó demasiado en responder',
+                });
+            }
+            throw fetchError;
+        }
     } catch (error) {
         console.error('[Login Error]', error);
         return res.status(500).json({ 

@@ -33,32 +33,66 @@ export async function readBody(req: any): Promise<any> {
 }
 
 export async function forwardJson(res: any, upstream: Response, context: string) {
-    setCors(res);
-    res.setHeader('Content-Type', 'application/json');
-    
-    const contentType = upstream.headers.get('content-type') || '';
+    try {
+        setCors(res);
+        res.setHeader('Content-Type', 'application/json');
+        
+        const contentType = upstream.headers.get('content-type') || '';
+        const status = upstream.status;
 
-    if (contentType.includes('application/json')) {
+        console.log(`[${context}] Status: ${status}, Content-Type: ${contentType}`);
+
+        // Try to parse as JSON
+        if (contentType.includes('application/json')) {
+            try {
+                const text = await upstream.text();
+                if (!text) {
+                    return res.status(status).json({
+                        error: 'Empty response from upstream',
+                        status: status,
+                    });
+                }
+                const data = JSON.parse(text);
+                return res.status(status).json(data);
+            } catch (parseError) {
+                console.error(`[${context}] JSON parse error:`, parseError);
+                return res.status(502).json({
+                    error: 'Bad Gateway',
+                    userMessage: 'Error procesando respuesta del servidor',
+                    details: `${context}: Invalid JSON response`,
+                });
+            }
+        }
+
+        // If not JSON content-type, try to parse as JSON anyway
         try {
-            const data = await upstream.json();
-            return res.status(upstream.status).json(data);
-        } catch (error) {
-            console.error(`[${context}] Failed to parse upstream JSON`, error);
-            return res.status(502).json({
-                error: 'Bad Gateway',
-                userMessage: 'Error procesando respuesta del servidor',
-                details: `${context}: Invalid JSON response`,
+            const text = await upstream.text();
+            if (!text) {
+                return res.status(status).json({
+                    error: 'Empty response from upstream',
+                    status: status,
+                });
+            }
+            const data = JSON.parse(text);
+            return res.status(status).json(data);
+        } catch (parseError) {
+            // Failed to parse, return error response
+            const text = await upstream.text();
+            console.error(`[${context}] Non-JSON response (${status}):`, text.slice(0, 200));
+            
+            return res.status(status).json({
+                error: `${context}: upstream non-JSON response`,
+                userMessage: 'Error de conexión con el servidor',
+                status: status,
+                details: text.slice(0, 200),
             });
         }
+    } catch (error) {
+        console.error(`[${context}] forwardJson error:`, error);
+        return res.status(502).json({
+            error: 'Bad Gateway',
+            userMessage: 'Error procesando respuesta del servidor',
+            details: error instanceof Error ? error.message : String(error),
+        });
     }
-
-    const text = await upstream.text();
-    console.error(`[${context}] Non-JSON response (${upstream.status}):`, text.slice(0, 200));
-    
-    return res.status(upstream.status).json({
-        error: `${context}: upstream non-JSON response`,
-        userMessage: 'Error de conexión con el servidor',
-        status: upstream.status,
-        details: text.slice(0, 200),
-    });
 }
