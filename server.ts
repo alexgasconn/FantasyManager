@@ -19,6 +19,16 @@ async function startServer() {
 
   app.use(express.json());
 
+  // === Health Check ===
+  app.get("/api/health", (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.json({ 
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development'
+    });
+  });
+
   // === Biwenger Proxy Endpoints ===
 
   app.post("/api/biwenger/login", async (req, res) => {

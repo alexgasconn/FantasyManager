@@ -32,39 +32,3 @@ export async function readBody(req: any): Promise<any> {
         return {};
     }
 }
-
-// Simple utility to forward responses
-export async function forwardJson(res: any, upstream: Response, context: string) {
-    try {
-        setCors(res);
-        res.setHeader('Content-Type', 'application/json');
-        
-        const text = await upstream.text();
-        
-        if (!text) {
-            return res.status(upstream.status).json({
-                error: 'Empty response from upstream',
-                status: upstream.status,
-            });
-        }
-
-        try {
-            const data = JSON.parse(text);
-            return res.status(upstream.status).json(data);
-        } catch (parseError) {
-            console.error(`[${context}] Non-JSON response (${upstream.status}):`, text.slice(0, 200));
-            return res.status(upstream.status).json({
-                error: `${context}: Non-JSON response`,
-                userMessage: 'Error de conexión con el servidor',
-                status: upstream.status,
-                details: text.slice(0, 200),
-            });
-        }
-    } catch (error) {
-        console.error(`[${context}] Error forwarding response:`, error);
-        return res.status(502).json({
-            error: 'Bad Gateway',
-            userMessage: 'Error procesando respuesta del servidor',
-        });
-    }
-}
