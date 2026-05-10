@@ -5,11 +5,8 @@ export function apiUrl(path: string): string {
 }
 
 export async function readJsonOrThrow<T>(res: Response, context: string): Promise<T> {
-    const contentType = res.headers.get('content-type') || '';
-    const status = res.status;
-
     try {
-        // Try to read as text first to avoid stream issues
+        // Always read as text first
         const text = await res.text();
         
         if (!text) {
@@ -20,15 +17,17 @@ export async function readJsonOrThrow<T>(res: Response, context: string): Promis
         try {
             return JSON.parse(text) as T;
         } catch (parseError) {
-            // If it's not valid JSON, throw with preview
+            // Show what we got instead
             const preview = text.slice(0, 200).replace(/\s+/g, ' ').trim();
-            throw new Error(`${context}: respuesta no JSON del backend (${status}). ${preview}`);
+            throw new Error(`${context}: respuesta no JSON del backend (${res.status}). ${preview}`);
         }
     } catch (error) {
+        // Re-throw if it's already our formatted error
         if (error instanceof Error && error.message.includes('respuesta no JSON')) {
             throw error;
         }
+        // Otherwise wrap it
         const message = error instanceof Error ? error.message : 'Unknown error';
-        throw new Error(`${context}: Error reading response (${status}). ${message}`);
+        throw new Error(`${context}: Error reading response (${res.status}). ${message}`);
     }
 }

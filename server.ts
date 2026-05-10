@@ -22,53 +22,145 @@ async function startServer() {
   // === Biwenger Proxy Endpoints ===
 
   app.post("/api/biwenger/login", async (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    
     try {
       const { email, password } = req.body;
-      const response = await fetch("https://biwenger.as.com/api/v2/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-type": "application/json",
-          "Accept": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      
+      if (!email || !password) {
+        return res.status(400).json({ 
+          error: 'Missing credentials',
+          userMessage: 'Email y contraseña son requeridos'
+        });
+      }
 
-      const contentType = response.headers.get('content-type');
+      console.log('[Login] Attempting auth for:', email);
+
+      let response: Response;
+      try {
+        response = await fetch("https://biwenger.as.com/api/v2/auth/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "User-Agent": "FantasyManager/1.0",
+          },
+          body: JSON.stringify({ email, password }),
+        });
+      } catch (fetchError) {
+        console.error('[Login] Fetch failed:', fetchError);
+        return res.status(503).json({ 
+          error: 'Service unavailable',
+          userMessage: 'No se pudo conectar con Biwenger',
+          details: fetchError instanceof Error ? fetchError.message : 'Unknown error'
+        });
+      }
+
+      console.log('[Login] Response status:', response.status);
+
+      // Read response text
+      let responseText = '';
+      try {
+        responseText = await response.text();
+      } catch (textError) {
+        console.error('[Login] Text read error:', textError);
+        return res.status(502).json({
+          error: 'Bad Gateway',
+          userMessage: 'Error leyendo respuesta del servidor'
+        });
+      }
+
+      // Parse JSON
       let data;
-
-      if (contentType && contentType.includes('application/json')) {
-        data = await response.json();
-      } else {
-        const text = await response.text();
-        console.error('Non-JSON response from Biwenger:', text.substring(0, 200));
-        return res.status(response.status).json({
-          error: `Invalid response from Biwenger: ${response.statusText}`,
-          details: text.substring(0, 200)
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('[Login] Parse error. Status:', response.status, 'Text:', responseText.substring(0, 300));
+        return res.status(response.status || 502).json({
+          error: 'Invalid response format',
+          userMessage: 'Respuesta inválida del servidor',
+          details: responseText.substring(0, 200)
         });
       }
 
       res.status(response.status).json(data);
     } catch (e) {
-      console.error('Login error:', e);
-      res.status(500).json({ error: "Internal Error", details: e instanceof Error ? e.message : String(e) });
+      console.error('[Login] Unhandled error:', e);
+      res.status(500).json({ 
+        error: "Internal Error",
+        userMessage: 'Error interno del servidor',
+        details: e instanceof Error ? e.message : String(e) 
+      });
     }
   });
 
   app.get("/api/biwenger/account", async (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    
     try {
       const authHeader = req.headers.authorization;
-      const response = await fetch("https://biwenger.as.com/api/v2/account", {
-        headers: {
-          "Content-type": "application/json",
-          "Accept": "application/json",
-          "Authorization": authHeader || "",
-        },
-      });
-      const data = await response.json();
+      
+      if (!authHeader) {
+        return res.status(401).json({
+          error: 'Unauthorized',
+          userMessage: 'Se requiere autenticación'
+        });
+      }
+
+      console.log('[Account] Fetching account data');
+
+      let response: Response;
+      try {
+        response = await fetch("https://biwenger.as.com/api/v2/account", {
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Authorization": authHeader,
+            "User-Agent": "FantasyManager/1.0",
+          },
+        });
+      } catch (fetchError) {
+        console.error('[Account] Fetch failed:', fetchError);
+        return res.status(503).json({
+          error: 'Service unavailable',
+          userMessage: 'No se pudo conectar con Biwenger'
+        });
+      }
+
+      console.log('[Account] Response status:', response.status);
+
+      // Read response text
+      let responseText = '';
+      try {
+        responseText = await response.text();
+      } catch (textError) {
+        console.error('[Account] Text read error:', textError);
+        return res.status(502).json({
+          error: 'Bad Gateway',
+          userMessage: 'Error leyendo respuesta del servidor'
+        });
+      }
+
+      // Parse JSON
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('[Account] Parse error. Status:', response.status);
+        return res.status(response.status || 502).json({
+          error: 'Invalid response format',
+          userMessage: 'Respuesta inválida del servidor'
+        });
+      }
+
       res.status(response.status).json(data);
     } catch (e) {
-      console.error(e);
-      res.status(500).json({ error: "Internal Error" });
+      console.error('[Account] Unhandled error:', e);
+      res.status(500).json({ 
+        error: "Internal Error",
+        userMessage: 'Error interno del servidor',
+        details: e instanceof Error ? e.message : String(e)
+      });
     }
   });
 
